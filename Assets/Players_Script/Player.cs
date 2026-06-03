@@ -40,6 +40,7 @@ public class Player : MonoBehaviour
     public LayerMask groundLayer;
 
     private Rigidbody2D rb;
+    private SpriteRenderer spriteRenderer;
 
     private float moveInput;
 
@@ -54,12 +55,25 @@ public class Player : MonoBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        
+        rb = GetComponent<Rigidbody2D>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        
     }
 
     void Update()
     {
         // 横移動入力
         moveInput = Input.GetAxisRaw("Horizontal");
+        // キャラクターの向きを変更
+        if (moveInput > 0)
+        {
+            spriteRenderer.flipX = false;
+        }
+        else if (moveInput < 0)
+        {
+            spriteRenderer.flipX = true;
+        }
 
         // 接地判定
         isGrounded = Physics2D.OverlapCircle(
