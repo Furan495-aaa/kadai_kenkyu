@@ -20,12 +20,16 @@ public class Enemy_Pre_A : MonoBehaviour
 
     private void Walk()
     {
+        //右を向いていたら
         if (transform.localScale.x > 0)
         {
+            //右へ動く
             rb.linearVelocityX = -moveSpeed;
         }
+        //左を向いていたら
         else if(transform.localScale.x < 0)
         {
+            //左へ動く
             rb.linearVelocityX = moveSpeed;
         }
     }
