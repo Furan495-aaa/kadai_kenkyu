@@ -48,6 +48,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Enemy_Attack_Bullet
   attack: 1
+  timeToDestroy: 20
 --- !u!212 &6313205350037553138
 SpriteRenderer:
   serializedVersion: 2

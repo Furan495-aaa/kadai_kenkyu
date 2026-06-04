@@ -16,8 +16,8 @@ public class Enemy_Attack_B : MonoBehaviour
     [SerializeField] float bulletSpeedY = 15f;
 
     [UnitHeaderInspectable("発射位置補正値")]
-    [SerializeField] float adjustPosX = 0.5f;
-    [SerializeField] float adjustPosY = 0f;
+    [SerializeField] float adjustPosX = 1f;
+    [SerializeField] float adjustPosY = 1f;
 
     [Header("発射間隔")]
     [SerializeField] float intervalTime = 0.5f;
@@ -71,7 +71,7 @@ public class Enemy_Attack_B : MonoBehaviour
 
         //弾を発射
         rb.AddForce(direction*bulletSpeedX, ForceMode2D.Impulse);
-        rb.AddForce(Vector2.up*bulletSpeedY, ForceMode2D.Impulse);
+        //rb.AddForce(Vector2.up*bulletSpeedY, ForceMode2D.Impulse);
 
         //待機後再攻撃可能化
         StartCoroutine(AttackInterval());

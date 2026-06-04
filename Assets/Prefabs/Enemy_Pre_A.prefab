@@ -48,6 +48,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7c8c7ae87c43f624f971db3afeda3972, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Enemy_Pre_A
+  target: {fileID: 0}
   moveSpeed: 3
 --- !u!114 &3763284791539240836
 MonoBehaviour:
@@ -65,8 +66,8 @@ MonoBehaviour:
   enemiesBullet: {fileID: 6692266960357395196, guid: 5d7f5f1082926014da00a9f4d629f0c0, type: 3}
   bulletSpeedX: 5
   bulletSpeedY: 5
-  adjustPosX: 1
-  adjustPosY: 1
+  adjustPosX: 0.2
+  adjustPosY: 0
   intervalTime: 2
 --- !u!212 &9049308003892148925
 SpriteRenderer:
