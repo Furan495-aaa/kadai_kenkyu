@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 public class Player : MonoBehaviour
 {
@@ -10,6 +11,19 @@ public class Player : MonoBehaviour
 
     public float airAcceleration = 15f;
     public float airDeceleration = 10f;
+
+    [Header("ダッシュ")]
+    public float dashSpeed = 20f;
+    public float dashDuration = 0.15f;
+    public float dashCooldown = 0.5f;
+
+    private bool isDashing;
+    private float dashCooldownTimer;
+
+    private float lastLeftPressTime;
+    private float lastRightPressTime;
+
+    public float doubleTapTime = 0.3f;
 
     [Header("ジャンプ")]
     public float jumpForce = 14f;
@@ -65,7 +79,7 @@ public class Player : MonoBehaviour
     {
         // 横移動入力
         moveInput = Input.GetAxisRaw("Horizontal");
-        // キャラクターの向きを変更
+
         if (moveInput > 0)
         {
             spriteRenderer.flipX = false;
@@ -74,6 +88,18 @@ public class Player : MonoBehaviour
         {
             spriteRenderer.flipX = true;
         }
+
+        if (dashCooldownTimer > 0)
+        {
+            dashCooldownTimer -= Time.deltaTime;
+        }
+
+        if (dashCooldownTimer > 0)
+        {
+            dashCooldownTimer -= Time.deltaTime;
+        }
+
+        HandleDashInput();
 
         // 接地判定
         isGrounded = Physics2D.OverlapCircle(
@@ -153,6 +179,8 @@ public class Player : MonoBehaviour
 
     void Move()
     {
+        if (isDashing)
+            return;
         float targetSpeed = moveInput * maxSpeed;
 
         float speedDifference =
@@ -182,6 +210,51 @@ public class Player : MonoBehaviour
         rb.AddForce(Vector2.right * movement);
     }
 
+    void HandleDashInput()
+    {
+        if (isDashing || dashCooldownTimer > 0)
+            return;
+
+        if (Input.GetKeyDown(KeyCode.A))
+        {
+            if (Time.time - lastLeftPressTime < doubleTapTime)
+            {
+                StartCoroutine(Dash(-1));
+            }
+
+            lastLeftPressTime = Time.time;
+        }
+
+        if (Input.GetKeyDown(KeyCode.D))
+        {
+            if (Time.time - lastRightPressTime < doubleTapTime)
+            {
+                StartCoroutine(Dash(1));
+            }
+
+            lastRightPressTime = Time.time;
+        }
+    }
+
+    IEnumerator Dash(int direction)
+    {
+        isDashing = true;
+
+        float originalGravity = rb.gravityScale;
+
+        rb.gravityScale = 0;
+
+        rb.linearVelocity =
+            new Vector2(direction * dashSpeed, 0);
+
+        yield return new WaitForSeconds(dashDuration);
+
+        rb.gravityScale = originalGravity;
+
+        isDashing = false;
+
+        dashCooldownTimer = dashCooldown;
+    }
     void Jump()
     {
         // 落下速度リセット

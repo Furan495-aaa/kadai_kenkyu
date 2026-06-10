@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 6313205350037553138}
   - component: {fileID: 6135365088137462854}
   - component: {fileID: 4210959819724179446}
+  - component: {fileID: -6685849537271410174}
   m_Layer: 0
   m_Name: Bullet
   m_TagString: Untagged
@@ -171,3 +172,16 @@ CircleCollider2D:
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
   m_Radius: 1.5
+--- !u!114 &-6685849537271410174
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6692266960357395196}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 71605715718712c43bec8b95e969a296, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageDealer
+  damage: 10
