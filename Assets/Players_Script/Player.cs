@@ -55,6 +55,7 @@ public class Player : MonoBehaviour
 
     private Rigidbody2D rb;
     private SpriteRenderer spriteRenderer;
+    private Animator anim;
 
     private float moveInput;
 
@@ -72,7 +73,9 @@ public class Player : MonoBehaviour
         
         rb = GetComponent<Rigidbody2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
-        
+
+        anim = GetComponent<Animator>();
+
     }
 
     void Update()
@@ -87,6 +90,17 @@ public class Player : MonoBehaviour
         else if (moveInput < 0)
         {
             spriteRenderer.flipX = true;
+        }
+
+        if (moveInput != 0)
+        {
+            //歩行アニメーションをONにする
+            anim.SetBool("Walk", true);
+        }
+        else
+        {
+            //歩行アニメーションをOFFにする
+            anim.SetBool("Walk", false);
         }
 
         if (dashCooldownTimer > 0)
