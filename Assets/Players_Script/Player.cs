@@ -229,24 +229,27 @@ public class Player : MonoBehaviour
         if (isDashing || dashCooldownTimer > 0)
             return;
 
-        if (Input.GetKeyDown(KeyCode.A))
+        if (Input.GetKeyDown(KeyCode.Q)||
+        Input.GetKeyDown(KeyCode.LeftShift) ||
+        Input.GetKeyDown(KeyCode.RightShift)||
+        Input.GetKeyDown(KeyCode.Mouse4))
         {
-            if (Time.time - lastLeftPressTime < doubleTapTime)
+            int direction;
+
+            if (moveInput > 0)
             {
-                StartCoroutine(Dash(-1));
+                direction = 1;
+            }
+            else if (moveInput < 0)
+            {
+                direction = -1;
+            }
+            else
+            {
+                return;
             }
 
-            lastLeftPressTime = Time.time;
-        }
-
-        if (Input.GetKeyDown(KeyCode.D))
-        {
-            if (Time.time - lastRightPressTime < doubleTapTime)
-            {
-                StartCoroutine(Dash(1));
-            }
-
-            lastRightPressTime = Time.time;
+            StartCoroutine(Dash(direction));
         }
     }
 
