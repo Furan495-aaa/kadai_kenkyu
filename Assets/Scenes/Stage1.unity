@@ -51440,7 +51440,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3763284791539240836, guid: 10888f37c6a9ef54b943a835977c4f7f, type: 3}
       propertyPath: bulletSpeedX
-      value: 1
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 3763284791539240836, guid: 10888f37c6a9ef54b943a835977c4f7f, type: 3}
       propertyPath: bulletSpeedY

@@ -12,8 +12,8 @@ public class Enemy_Attack_B : MonoBehaviour
     [SerializeField] GameObject enemiesBullet;
 
     [Header("弾速")]
-    [SerializeField] float bulletSpeedX = 2f;
-    [SerializeField] float bulletSpeedY = 15f;
+    [SerializeField] float bulletSpeedX = 8f;
+    [SerializeField] float bulletSpeedY = 8f;
 
     [UnitHeaderInspectable("発射位置補正値")]
     [SerializeField] float adjustPosX = 1f;
@@ -24,6 +24,9 @@ public class Enemy_Attack_B : MonoBehaviour
 
     //攻撃可能フラグ
     private bool canAttack = true;
+
+    //向き
+    private int rotaY = 0;
 
     void Update()
     {
@@ -50,6 +53,7 @@ public class Enemy_Attack_B : MonoBehaviour
         {
             //方向=右
             direction = Vector2.right;
+            rotaY = 180;
 
             //発射位置=敵位置+補正値
             shootPos = new Vector2(transform.position.x+adjustPosX, transform.position.y+adjustPosY);
@@ -58,13 +62,14 @@ public class Enemy_Attack_B : MonoBehaviour
         {
             //方向=左
             direction = Vector2.left;
+            rotaY = 0;
 
             //発射位置=敵位置+補正値
             shootPos = new Vector2(transform.position.x-adjustPosX, transform.position.y+adjustPosY);
         }
 
         //弾を配置
-        GameObject bullet = Instantiate(enemiesBullet, shootPos, Quaternion.identity);
+        GameObject bullet = Instantiate(enemiesBullet, shootPos, Quaternion.Euler(0, rotaY, 0));
 
         //弾の判定を取得
         Rigidbody2D rb = bullet.GetComponent<Rigidbody2D>();

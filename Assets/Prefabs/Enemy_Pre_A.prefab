@@ -30,8 +30,8 @@ Transform:
   m_GameObject: {fileID: 3832886029872179272}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 5, y: -3, z: 0}
-  m_LocalScale: {x: 0.5, y: 1, z: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -49,7 +49,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Enemy_Pre_A
   target: {fileID: 0}
-  moveSpeed: 3
+  moveSpeed: 2
 --- !u!114 &3763284791539240836
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -64,8 +64,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Enemy_Attack_B
   target: {fileID: 0}
   enemiesBullet: {fileID: 6692266960357395196, guid: 5d7f5f1082926014da00a9f4d629f0c0, type: 3}
-  bulletSpeedX: 5
-  bulletSpeedY: 5
+  bulletSpeedX: 7
+  bulletSpeedY: 1
   adjustPosX: 0.2
   adjustPosY: 0
   intervalTime: 2
@@ -118,7 +118,7 @@ SpriteRenderer:
   m_SortingLayer: 1
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
+  m_Sprite: {fileID: 21300000, guid: d7ae1b314a62e764db46c041ed693200, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0

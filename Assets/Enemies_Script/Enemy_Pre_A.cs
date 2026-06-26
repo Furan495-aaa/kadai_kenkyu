@@ -9,7 +9,7 @@ public class Enemy_Pre_A : MonoBehaviour
 
 
     [Header("移動速度")]
-    [SerializeField] private float moveSpeed = 5.0f;
+    [SerializeField] private float moveSpeed = 8.0f;
     private Rigidbody2D rb;
 
     private bool mem;
