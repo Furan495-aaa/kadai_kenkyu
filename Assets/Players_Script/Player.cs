@@ -92,17 +92,6 @@ public class Player : MonoBehaviour
             spriteRenderer.flipX = true;
         }
 
-        if (moveInput != 0)
-        {
-            //歩行アニメーションをONにする
-            anim.SetBool("Walk", true);
-        }
-        else
-        {
-            //歩行アニメーションをOFFにする
-            anim.SetBool("Walk", false);
-        }
-
         if (dashCooldownTimer > 0)
         {
             dashCooldownTimer -= Time.deltaTime;
@@ -184,8 +173,24 @@ public class Player : MonoBehaviour
 
         // 最大落下速度
         ClampFallSpeed();
+        UpdateAnimation();
     }
 
+    void UpdateAnimation()
+    {
+        // 歩行
+        anim.SetBool("Walk", moveInput != 0 && isGrounded);
+
+        // 接地
+        anim.SetBool("isGrounded", isGrounded);
+
+        // 縦方向の速度（ジャンプ・落下判定に使用）
+        anim.SetFloat("velocityY", rb.linearVelocity.y);
+
+        
+    }
+
+    
     void FixedUpdate()
     {
         Move();
