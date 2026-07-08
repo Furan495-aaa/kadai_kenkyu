@@ -19,6 +19,8 @@ public class Player : MonoBehaviour
 
     private bool isDashing;
     private float dashCooldownTimer;
+    // ★追加: 空中ダッシュをすでに使ったかどうかのフラグ
+    private bool hasAirDashed; 
 
     private float lastLeftPressTime;
     private float lastRightPressTime;
@@ -70,12 +72,8 @@ public class Player : MonoBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
-        
-        rb = GetComponent<Rigidbody2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
-
         anim = GetComponent<Animator>();
-
     }
 
     void Update()
@@ -97,11 +95,6 @@ public class Player : MonoBehaviour
             dashCooldownTimer -= Time.deltaTime;
         }
 
-        if (dashCooldownTimer > 0)
-        {
-            dashCooldownTimer -= Time.deltaTime;
-        }
-
         HandleDashInput();
 
         // 接地判定
@@ -111,13 +104,16 @@ public class Player : MonoBehaviour
             groundLayer
         );
 
-        // Coyote Time
+        // Coyote Time / 着地時のリセット処理
         if (isGrounded)
         {
             coyoteTimer = coyoteTime;
 
             // 地面についたらジャンプ回数回復
             jumpCount = 0;
+
+            // ★追加: 地面についたら空中ダッシュのフラグをリセット（再度使用可能にする）
+            hasAirDashed = false; 
         }
         else
         {
@@ -168,29 +164,23 @@ public class Player : MonoBehaviour
             );
         }
 
-        // 重力制御
-        ApplyBetterJumpGravity();
+        // ダッシュ中でない場合のみ重力と最大落下速度を制御
+        if (!isDashing)
+        {
+            ApplyBetterJumpGravity();
+            ClampFallSpeed();
+        }
 
-        // 最大落下速度
-        ClampFallSpeed();
         UpdateAnimation();
     }
 
     void UpdateAnimation()
     {
-        // 歩行
         anim.SetBool("Walk", moveInput != 0 && isGrounded);
-
-        // 接地
         anim.SetBool("isGrounded", isGrounded);
-
-        // 縦方向の速度（ジャンプ・落下判定に使用）
         anim.SetFloat("velocityY", rb.linearVelocity.y);
-
-        
     }
 
-    
     void FixedUpdate()
     {
         Move();
@@ -200,32 +190,21 @@ public class Player : MonoBehaviour
     {
         if (isDashing)
             return;
+        
         float targetSpeed = moveInput * maxSpeed;
-
-        float speedDifference =
-            targetSpeed - rb.linearVelocity.x;
-
+        float speedDifference = targetSpeed - rb.linearVelocity.x;
         float accelerationRate;
 
-        // 地上と空中で加速を変える
         if (isGrounded)
         {
-            accelerationRate =
-                (Mathf.Abs(targetSpeed) > 0.01f)
-                ? groundAcceleration
-                : groundDeceleration;
+            accelerationRate = (Mathf.Abs(targetSpeed) > 0.01f) ? groundAcceleration : groundDeceleration;
         }
         else
         {
-            accelerationRate =
-                (Mathf.Abs(targetSpeed) > 0.01f)
-                ? airAcceleration
-                : airDeceleration;
+            accelerationRate = (Mathf.Abs(targetSpeed) > 0.01f) ? airAcceleration : airDeceleration;
         }
 
-        float movement =
-            speedDifference * accelerationRate;
-
+        float movement = speedDifference * accelerationRate;
         rb.AddForce(Vector2.right * movement);
     }
 
@@ -234,10 +213,14 @@ public class Player : MonoBehaviour
         if (isDashing || dashCooldownTimer > 0)
             return;
 
-        if (Input.GetKeyDown(KeyCode.Q)||
-        Input.GetKeyDown(KeyCode.LeftShift) ||
-        Input.GetKeyDown(KeyCode.RightShift)||
-        Input.GetKeyDown(KeyCode.Mouse4))
+        // ★修正点: 空中にいる、かつ、すでに空中ダッシュを使用済みの場合は入力を受け付けない
+        if (!isGrounded && hasAirDashed)
+            return;
+
+        if (Input.GetKeyDown(KeyCode.Q) ||
+            Input.GetKeyDown(KeyCode.LeftShift) ||
+            Input.GetKeyDown(KeyCode.RightShift) ||
+            Input.GetKeyDown(KeyCode.Mouse4))
         {
             int direction;
 
@@ -251,7 +234,13 @@ public class Player : MonoBehaviour
             }
             else
             {
-                return;
+                direction = spriteRenderer.flipX ? -1 : 1;
+            }
+
+            // ★追加: 今回のダッシュが「空中でのダッシュ」なら、使用済みフラグを立てる
+            if (!isGrounded)
+            {
+                hasAirDashed = true;
             }
 
             StartCoroutine(Dash(direction));
@@ -263,48 +252,32 @@ public class Player : MonoBehaviour
         isDashing = true;
 
         float originalGravity = rb.gravityScale;
-
         rb.gravityScale = 0;
-
-        rb.linearVelocity =
-            new Vector2(direction * dashSpeed, 0);
+        rb.linearVelocity = new Vector2(direction * dashSpeed, 0);
 
         yield return new WaitForSeconds(dashDuration);
 
         rb.gravityScale = originalGravity;
-
         isDashing = false;
-
         dashCooldownTimer = dashCooldown;
     }
+
     void Jump()
     {
-        // 落下速度リセット
-        rb.linearVelocity = new Vector2(
-            rb.linearVelocity.x,
-            0f
-        );
-
-        rb.linearVelocity = new Vector2(
-            rb.linearVelocity.x,
-            jumpForce
-        );
+        rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
+        rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
     }
 
     void ApplyBetterJumpGravity()
     {
-        // 落下中
         if (rb.linearVelocity.y < 0)
         {
             rb.gravityScale = fallGravity;
         }
-        // 上昇中でボタンを離した
-        else if (rb.linearVelocity.y > 0 &&
-                 !Input.GetButton("Jump"))
+        else if (rb.linearVelocity.y > 0 && !Input.GetButton("Jump"))
         {
             rb.gravityScale = lowJumpGravity;
         }
-        // 通常
         else
         {
             rb.gravityScale = normalGravity;
@@ -315,10 +288,7 @@ public class Player : MonoBehaviour
     {
         if (rb.linearVelocity.y < maxFallSpeed)
         {
-            rb.linearVelocity = new Vector2(
-                rb.linearVelocity.x,
-                maxFallSpeed
-            );
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, maxFallSpeed);
         }
     }
 
@@ -327,10 +297,6 @@ public class Player : MonoBehaviour
         if (groundCheck == null) return;
 
         Gizmos.color = Color.red;
-
-        Gizmos.DrawWireSphere(
-            groundCheck.position,
-            groundCheckRadius
-        );
+        Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
     }
 }
