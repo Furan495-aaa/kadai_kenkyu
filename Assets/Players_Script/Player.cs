@@ -30,6 +30,12 @@ public class Player : MonoBehaviour
     [Header("ジャンプ")]
     public float jumpForce = 14f;
 
+    [Header("攻撃")]
+    public GameObject attackHitbox;
+    public float attackDuration = 0.2f;
+    public float attackCooldown = 0.4f;
+    public int attackDamage = 1;
+
     [Header("二段ジャンプ")]
     public int maxJumpCount = 2;
 
@@ -55,6 +61,8 @@ public class Player : MonoBehaviour
     public float groundCheckRadius = 0.2f;
     public LayerMask groundLayer;
 
+    private bool isAttacking;
+    private float attackCooldownTimer;
     private Rigidbody2D rb;
     private SpriteRenderer spriteRenderer;
     private Animator anim;
@@ -170,6 +178,15 @@ public class Player : MonoBehaviour
             ApplyBetterJumpGravity();
             ClampFallSpeed();
         }
+        // 攻撃クールダウン
+        if (attackCooldownTimer > 0)
+            attackCooldownTimer -= Time.deltaTime;
+
+        // 攻撃入力（攻撃中・ダッシュ中は受け付けない）
+        if (Input.GetButtonDown("Fire1") && !isAttacking && !isDashing && attackCooldownTimer <= 0)
+        {
+            StartCoroutine(Attack());
+        }
 
         UpdateAnimation();
     }
@@ -179,6 +196,7 @@ public class Player : MonoBehaviour
         anim.SetBool("Walk", moveInput != 0 && isGrounded);
         anim.SetBool("isGrounded", isGrounded);
         anim.SetFloat("velocityY", rb.linearVelocity.y);
+        anim.SetBool("isAttacking", isAttacking);
     }
 
     void FixedUpdate()
@@ -262,6 +280,26 @@ public class Player : MonoBehaviour
         dashCooldownTimer = dashCooldown;
     }
 
+    IEnumerator Attack()
+    {
+        isAttacking = true;
+
+        // 向いている方向にヒットボックスを出す
+        float dir = spriteRenderer.flipX ? -1f : 1f;
+        attackHitbox.transform.localPosition = new Vector2(
+            Mathf.Abs(attackHitbox.transform.localPosition.x) * dir,
+            attackHitbox.transform.localPosition.y
+        );
+
+        attackHitbox.SetActive(true);
+
+        yield return new WaitForSeconds(attackDuration);
+
+        attackHitbox.SetActive(false);
+
+        attackCooldownTimer = attackCooldown;
+        isAttacking = false;
+    }
     void Jump()
     {
         rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
