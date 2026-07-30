@@ -61335,6 +61335,10 @@ PrefabInstance:
       propertyPath: moveSpeed
       value: 2
       objectReference: {fileID: 0}
+    - target: {fileID: -8688260561627262458, guid: 10888f37c6a9ef54b943a835977c4f7f, type: 3}
+      propertyPath: groundLayer.m_Bits
+      value: 8
+      objectReference: {fileID: 0}
     - target: {fileID: 3763284791539240836, guid: 10888f37c6a9ef54b943a835977c4f7f, type: 3}
       propertyPath: target
       value: 
@@ -61426,6 +61430,10 @@ PrefabInstance:
     - target: {fileID: 8842094285566570877, guid: 10888f37c6a9ef54b943a835977c4f7f, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9049308003892148925, guid: 10888f37c6a9ef54b943a835977c4f7f, type: 3}
+      propertyPath: m_FlipX
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -61888,7 +61896,7 @@ MonoBehaviour:
   attackDuration: 0.2
   attackCooldown: 0.4
   attackDamage: 100
-  maxJumpCount: 1
+  maxJumpCount: 2
   jumpCutMultiplier: 0.5
   normalGravity: 3
   fallGravity: 6

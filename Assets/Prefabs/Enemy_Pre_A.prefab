@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 9049308003892148925}
   - component: {fileID: 8799101756794833226}
   - component: {fileID: 5569865924948535882}
+  - component: {fileID: 3063008666261695193}
   m_Layer: 0
   m_Name: Enemy_Pre_A
   m_TagString: Enemy
@@ -48,8 +49,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7c8c7ae87c43f624f971db3afeda3972, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Enemy_Pre_A
-  target: {fileID: 0}
   moveSpeed: 2
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 8
+  groundCheckDistance: 0.8
+  wallCheckDistance: 0.4
+  searchRadius: 5
+  targetTag: Player
 --- !u!114 &3763284791539240836
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -120,7 +127,7 @@ SpriteRenderer:
   m_MaskInteraction: 0
   m_Sprite: {fileID: 21300000, guid: d7ae1b314a62e764db46c041ed693200, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_FlipX: 0
+  m_FlipX: 1
   m_FlipY: 0
   m_DrawMode: 0
   m_Size: {x: 1, y: 1}
@@ -201,3 +208,16 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 0.60584736, y: 0.7990265}
   m_EdgeRadius: 0.001
+--- !u!114 &3063008666261695193
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3832886029872179272}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df135edc14057d848aa0276461c39219, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Enemy
+  maxHp: 100
