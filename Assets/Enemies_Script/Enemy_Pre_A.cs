@@ -9,7 +9,7 @@ public class Enemy_Pre_A : MonoBehaviour
     private Rigidbody2D rb;
 
     [Header("検知の設定")]
-    [SerializeField] private LayerMask groundLayer;     // 地面や壁と判定するレイヤー
+    [SerializeField] private LayerMask groundLayer;      // 地面や壁と判定するレイヤー
     [SerializeField] private float groundCheckDistance = 0.8f; // 足元の検知距離
     [SerializeField] private float wallCheckDistance = 0.4f;   // 前方の壁の検知距離
 
@@ -81,7 +81,9 @@ public class Enemy_Pre_A : MonoBehaviour
         float halfHeight = enemyCollider.bounds.extents.y;
 
         Vector2 wallCheckPos = new Vector2(center.x + (halfWidth + 0.1f) * (isFacingRight ? 1 : -1), center.y);
-        Vector2 groundCheckPos = new Vector2(center.x + (halfWidth + 0.2f) * (isFacingRight ? 1 : -1), center.y - halfHeight + 0.1f);
+        
+        // ★修正: 足元チェックの位置を体の中心（center.x）に固定し、反転時の誤判定を防ぐ
+        Vector2 groundCheckPos = new Vector2(center.x, center.y - halfHeight + 0.1f);
 
         bool isWallAhead = Physics2D.Raycast(wallCheckPos, checkDirection, wallCheckDistance, groundLayer);
         bool isGroundAhead = Physics2D.Raycast(groundCheckPos, Vector2.down, groundCheckDistance, groundLayer);
@@ -142,7 +144,9 @@ public class Enemy_Pre_A : MonoBehaviour
         float halfHeight = col.bounds.extents.y;
 
         Vector2 wallCheckPos = new Vector2(center.x + halfWidth + 0.1f, center.y);
-        Vector2 groundCheckPos = new Vector2(center.x + halfWidth + 0.2f, center.y - halfHeight + 0.1f);
+        
+        // ★ギズモの足元位置も中心に合わせる
+        Vector2 groundCheckPos = new Vector2(center.x, center.y - halfHeight + 0.1f);
 
         Gizmos.color = Color.green;
         Gizmos.DrawLine(wallCheckPos, wallCheckPos + Vector2.right * wallCheckDistance);
