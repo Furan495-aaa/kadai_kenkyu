@@ -340,4 +340,6 @@ public class Player : MonoBehaviour
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
     }
+    // Player.cs の中（どこでもOK）に以下を追加
+public bool IsGrounded { get { return isGrounded; } }
 }
