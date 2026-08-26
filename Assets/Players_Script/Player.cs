@@ -75,6 +75,9 @@ public class Player : MonoBehaviour
 
     private int jumpCount;
 
+    // 操作可能かどうかを管理するフラグ（ゴール時用）
+    private bool canControl = true;
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -84,6 +87,9 @@ public class Player : MonoBehaviour
 
     void Update()
     {
+        // 操作不可（ゴール後など）なら、Update内の入力を一切受け付けない
+        if (!canControl) return;
+
         // 横移動入力
         moveInput = Input.GetAxisRaw("Horizontal");
 
@@ -103,7 +109,7 @@ public class Player : MonoBehaviour
 
         HandleDashInput();
 
-        // ★追加・修正: 上昇中（足場を下からすり抜けている時など）は、接地判定を強制的にfalseにする
+        // 上昇中（足場を下からすり抜けている時など）は、接地判定を強制的にfalseにする
         if (rb.linearVelocity.y > 0.1f)
         {
             isGrounded = false;
@@ -206,6 +212,9 @@ public class Player : MonoBehaviour
 
     void FixedUpdate()
     {
+        // 操作不可のときは物理移動もしない
+        if (!canControl) return;
+
         Move();
     }
 
@@ -340,6 +349,60 @@ public class Player : MonoBehaviour
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
     }
-    // Player.cs の中（どこでもOK）に以下を追加
-public bool IsGrounded { get { return isGrounded; } }
+
+    public bool IsGrounded { get { return isGrounded; } }
+
+    // ==========================================
+    // ゴール時にGoalControllerから呼び出すストップ＆中央スライド用メソッド
+    // ==========================================
+    public void StopControl(Vector3 targetPosition)
+    {
+        canControl = false; // 操作を受け付けなくする
+        moveInput = 0;      // 移動入力をリセット
+
+        if (rb != null)
+        {
+            // 物理演算の速度とシミュレーションを完全に停止
+            rb.linearVelocity = Vector2.zero;
+            rb.simulated = false; 
+        }
+
+        // 歩きアニメーションをオフにする
+        if (anim != null)
+        {
+            anim.SetBool("Walk", false);
+        }
+
+        // ゴールの中央へ滑らかにスライド移動させるコルーチンを開始
+        StartCoroutine(SnapToGoal(targetPosition));
+    }
+
+    private IEnumerator SnapToGoal(Vector3 targetPosition)
+    {
+        // ★【重要】触れた瞬間のY座標が上方向へブレるのを防ぐため、
+        // Xは触れた位置から、Yは「ゴールとプレイヤーのY座標の中間」または「ゴールの高さ」を基準にして急上昇を防ぐ
+        Vector3 startPosition = transform.position;
+        
+        // もし「ジャンプの勢いで上に突き抜ける」のを完全に防ぎたい場合は、
+        // スタート位置のY座標を、ゴールのY座標と現在のY座標の低い方（またはゴールと同じ高さ）に強制補正するアプローチもあります。
+        // ここでは、確実に上に行かないように、スライド開始時のY座標を目標のY座標にピタッと合わせるか、安全にLerpさせます。
+
+        float elapsedTime = 0f;
+        float duration = 0.3f; // 中央へ移動する時間（秒）
+
+        while (elapsedTime < duration)
+        {
+            elapsedTime += Time.deltaTime;
+            float t = elapsedTime / duration;
+            
+            // 下から上にジャンプして入ったときに上へ突き抜けないよう、
+            // Y軸方向の動きを強制的に「現在地からゴールへの補間」だけに制限する
+            transform.position = Vector3.Lerp(startPosition, targetPosition, t);
+            
+            yield return null;
+        }
+
+        // 最後にピタリと中心に合わせる
+        transform.position = targetPosition;
+    }
 }
