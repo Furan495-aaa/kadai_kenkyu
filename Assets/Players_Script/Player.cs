@@ -34,6 +34,7 @@ public class Player : MonoBehaviour
     public float attackDuration = 0.2f;
     public float attackCooldown = 0.4f;
     public int attackDamage = 1;
+    public float hitboxOffsetX = 0.8f;
 
     [Header("二段ジャンプ")]
     public int maxJumpCount = 2;
@@ -296,9 +297,10 @@ public class Player : MonoBehaviour
     {
         isAttacking = true;
 
+        // 向いている方向に応じてX座標を直接指定
         float dir = spriteRenderer.flipX ? -1f : 1f;
         attackHitbox.transform.localPosition = new Vector2(
-            Mathf.Abs(attackHitbox.transform.localPosition.x) * dir,
+            hitboxOffsetX * dir,
             attackHitbox.transform.localPosition.y
         );
 
