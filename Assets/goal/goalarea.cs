@@ -6,10 +6,11 @@ using System.Collections;
 public class GoalController : MonoBehaviour
 {
     [SerializeField] private string nextSceneName;
-    [SerializeField] private float fadeDuration = 1.0f; // フェード（暗転）にかかる時間
-    [SerializeField] private float sceneDelay = 0.5f;   // ★追加：暗転し終わってから次のシーンに切り替わるまでの「待機時間」
+    [SerializeField] private float fadeDuration = 1.0f; // フェードにかかる時間
+    [SerializeField] private float sceneDelay = 0.5f;   // 暗転後の待機時間
 
     private CanvasGroup fadeCanvasGroup;
+    private bool isGoalTriggered = false; // 二重発動防止
 
     private void Start()
     {
@@ -27,18 +28,21 @@ public class GoalController : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
+        if (isGoalTriggered) return;
+
         if (collision.CompareTag("Player"))
         {
-            Debug.Log("クリア！プレイヤーを固定してフェードアウト開始");
+            isGoalTriggered = true;
+            Debug.Log("クリア！減速しながら中心へ移動し、フェードアウト開始");
 
             Player player = collision.GetComponent<Player>();
             if (player != null)
             {
-                // ゴールの中心座標を渡して、プレイヤーをピタッと止めて真ん中へスライドさせる
-                player.StopControl(transform.position);
+                // ゴールの中心座標を渡して、少しずつ減速しながらスライドさせる
+                player.StartGoalSlide(transform.position);
             }
 
-            // フェードアウトとシーン遷移を開始
+            // フェードアウトとシーン遷移のコルーチンを開始
             StartCoroutine(FadeAndLoadScene());
         }
     }
@@ -48,7 +52,7 @@ public class GoalController : MonoBehaviour
         // 1. フェードアウト（暗転）が完了するまで待つ
         yield return StartCoroutine(Fade(1));
 
-        // 2. ★追加：完全に暗転した状態で、少しだけ「間（ま）」を作る（0.5秒など）
+        // 2. 暗転した状態で少し待つ
         if (sceneDelay > 0f)
         {
             yield return new WaitForSeconds(sceneDelay);

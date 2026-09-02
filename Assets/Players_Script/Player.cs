@@ -353,56 +353,61 @@ public class Player : MonoBehaviour
     public bool IsGrounded { get { return isGrounded; } }
 
     // ==========================================
-    // ゴール時にGoalControllerから呼び出すストップ＆中央スライド用メソッド
+    // ゴール時：一定の速度で移動し、三分の一の位置（または着地）でピタッと止まるメソッド
     // ==========================================
-    public void StopControl(Vector3 targetPosition)
+    public void StartGoalSlide(Vector3 goalPosition)
     {
         canControl = false; // 操作を受け付けなくする
         moveInput = 0;      // 移動入力をリセット
 
-        if (rb != null)
-        {
-            // 物理演算の速度とシミュレーションを完全に停止
-            rb.linearVelocity = Vector2.zero;
-            rb.simulated = false; 
-        }
-
-        // 歩きアニメーションをオフにする
         if (anim != null)
         {
             anim.SetBool("Walk", false);
         }
 
-        // ゴールの中央へ滑らかにスライド移動させるコルーチンを開始
-        StartCoroutine(SnapToGoal(targetPosition));
+        StartCoroutine(GoalSlideRoutine(goalPosition));
     }
 
-    private IEnumerator SnapToGoal(Vector3 targetPosition)
+    private IEnumerator GoalSlideRoutine(Vector3 goalPosition)
     {
-        // ★【重要】触れた瞬間のY座標が上方向へブレるのを防ぐため、
-        // Xは触れた位置から、Yは「ゴールとプレイヤーのY座標の中間」または「ゴールの高さ」を基準にして急上昇を防ぐ
-        Vector3 startPosition = transform.position;
-        
-        // もし「ジャンプの勢いで上に突き抜ける」のを完全に防ぎたい場合は、
-        // スタート位置のY座標を、ゴールのY座標と現在のY座標の低い方（またはゴールと同じ高さ）に強制補正するアプローチもあります。
-        // ここでは、確実に上に行かないように、スライド開始時のY座標を目標のY座標にピタッと合わせるか、安全にLerpさせます。
+        float startX = transform.position.x;
 
-        float elapsedTime = 0f;
-        float duration = 0.3f; // 中央へ移動する時間（秒）
+        // ゴール中心から手前側へずらした「三分の一の位置」を計算
+        float targetX;
+        float offset = 0.5f; // 停止位置の調整用オフセット
 
-        while (elapsedTime < duration)
+        if (startX < goalPosition.x)
         {
-            elapsedTime += Time.deltaTime;
-            float t = elapsedTime / duration;
-            
-            // 下から上にジャンプして入ったときに上へ突き抜けないよう、
-            // Y軸方向の動きを強制的に「現在地からゴールへの補間」だけに制限する
-            transform.position = Vector3.Lerp(startPosition, targetPosition, t);
-            
-            yield return null;
+            targetX = goalPosition.x - offset; // 左から入った場合
+        }
+        else
+        {
+            targetX = goalPosition.x + offset; // 右から入った場合
         }
 
-        // 最後にピタリと中心に合わせる
-        transform.position = targetPosition;
+        float slideSpeed = 10f; // 移動するスピード
+
+        while (true)
+        {
+            // 一定の速度で目標地点（targetX）へ向かって移動
+            float currentX = Mathf.MoveTowards(transform.position.x, targetX, slideSpeed * Time.deltaTime);
+
+            // 接地判定をチェック
+            bool currentlyGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+
+            // 「三分の一の位置に到着した」または「地面に着地した」瞬間にピタッと止まる
+            if (currentlyGrounded || Mathf.Abs(currentX - targetX) < 0.01f)
+            {
+                transform.position = new Vector3(targetX, transform.position.y, transform.position.z);
+                rb.linearVelocity = new Vector2(0f, 0f);
+                break;
+            }
+
+            // X座標を更新しつつ、重力（Y軸の落下）はそのまま活かす
+            transform.position = new Vector3(currentX, transform.position.y, transform.position.z);
+            rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
+
+            yield return null;
+        }
     }
 }
