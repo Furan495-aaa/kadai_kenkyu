@@ -61900,6 +61900,7 @@ MonoBehaviour:
   attackDuration: 0.2
   attackCooldown: 0.4
   attackDamage: 100
+  hitboxOffsetX: 0.8
   maxJumpCount: 2
   jumpCutMultiplier: 0.5
   normalGravity: 3
