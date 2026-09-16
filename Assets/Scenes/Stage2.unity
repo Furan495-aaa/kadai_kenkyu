@@ -595,7 +595,7 @@ TilemapRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
+  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -290567,6 +290567,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1574563414530517608, guid: 3d05e04e9cffc3549ae7a4f2f67474b6, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
     - target: {fileID: 6017053704595984550, guid: 3d05e04e9cffc3549ae7a4f2f67474b6, type: 3}
       propertyPath: m_Name
       value: Surinukeruyuka (2)
@@ -292489,6 +292493,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 414002389}
     m_Modifications:
+    - target: {fileID: 6255062351929229866, guid: becbe24017ada55489a62bc7c19341c9, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
     - target: {fileID: 6707526632676248983, guid: becbe24017ada55489a62bc7c19341c9, type: 3}
       propertyPath: m_Name
       value: Triangle (1)
@@ -293833,6 +293841,7 @@ MonoBehaviour:
   attackDuration: 0.2
   attackCooldown: 0.4
   attackDamage: 100
+  hitboxOffsetX: 0.8
   maxJumpCount: 2
   jumpCutMultiplier: 0.5
   normalGravity: 3
@@ -293899,7 +293908,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
+  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
