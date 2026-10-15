@@ -3,6 +3,11 @@ using System.Collections;
 
 public class Player : MonoBehaviour
 {
+    [Header("HP設定")]
+    public int maxHp = 5;
+    // staticにすることで、シーンが切り替わってもHPの数値を記憶し続けられます
+    private static int currentHp = -1; 
+
     [Header("移動")]
     public float maxSpeed = 8f;
 
@@ -79,11 +84,22 @@ public class Player : MonoBehaviour
     // 操作可能かどうかを管理するフラグ（ゴール時用）
     private bool canControl = true;
 
+    void Awake()
+    {
+        // ゲーム開始時（最初のシーン）で、まだHPが初期化されていない場合は最大値にする
+        if (currentHp < 0)
+        {
+            currentHp = maxHp;
+        }
+    }
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         anim = GetComponent<Animator>();
+
+        Debug.Log("現在のHP: " + currentHp); // 引き継ぎ確認用
     }
 
     void Update()
@@ -297,7 +313,6 @@ public class Player : MonoBehaviour
     {
         isAttacking = true;
 
-        // 向いている方向に応じてX座標を直接指定
         float dir = spriteRenderer.flipX ? -1f : 1f;
         attackHitbox.transform.localPosition = new Vector2(
             hitboxOffsetX * dir,
@@ -355,7 +370,40 @@ public class Player : MonoBehaviour
     public bool IsGrounded { get { return isGrounded; } }
 
     // ==========================================
-    // ゴール時：一定の速度で移動し、三分の一の位置（または着地）でピタッと止まるメソッド
+    // HPの増減用メソッド（外部から呼び出し可能）
+    // ==========================================
+    public void TakeDamage(int damage)
+    {
+        currentHp -= damage;
+        if (currentHp < 0) currentHp = 0;
+        Debug.Log("ダメージを受けた！現在のHP: " + currentHp);
+
+        if (currentHp <= 0)
+        {
+            // ゲームオーバー処理など
+        }
+    }
+
+    public void Heal(int amount)
+    {
+        currentHp += amount;
+        if (currentHp > maxHp) currentHp = maxHp;
+        Debug.Log("回復した！現在のHP: " + currentHp);
+    }
+
+    public int GetCurrentHp()
+    {
+        return currentHp;
+    }
+
+    // ゲームを最初からやり直すときなどにHPをリセットするためのメソッド
+    public static void ResetHp()
+    {
+        currentHp = -1;
+    }
+
+    // ==========================================
+    // ゴール時：減速しながら「三分の一の位置」へ移動し、ピタッと止まるメソッド
     // ==========================================
     public void StartGoalSlide(Vector3 goalPosition)
     {
