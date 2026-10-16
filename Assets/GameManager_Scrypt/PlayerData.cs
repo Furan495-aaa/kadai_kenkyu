@@ -41,9 +41,12 @@ public class PlayerData : MonoBehaviour
         if (fillObj != null)
             hpBarFill = fillObj.GetComponent<Image>();
 
-        GameObject delayObj = GameObject.FindWithTag("HPBarDelay");
-        if (delayObj != null)
-            hpBarDelay = delayObj.GetComponent<Image>();
+        UpdateHPBar();
+
+        currentHP = maxHP;
+
+        if (fillObj != null)
+            hpBarFill = fillObj.GetComponent<Image>();
 
         UpdateHPBar();
     }
@@ -75,6 +78,14 @@ public class PlayerData : MonoBehaviour
         if (currentHP <= 0)
         {
             Die();
+
+            if (GameOverManager.Instance == null)
+            {
+                Debug.LogError("GameOverManager が見つかりません！");
+                return;
+            }
+
+            GameOverManager.Instance.ShowGameOver();
         }
     }
 
