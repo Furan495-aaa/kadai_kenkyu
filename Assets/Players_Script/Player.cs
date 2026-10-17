@@ -84,6 +84,10 @@ public class Player : MonoBehaviour
     // 操作可能かどうかを管理するフラグ（ゴール時用）
     private bool canControl = true;
 
+    private float walkSETimer;
+    public float walkSEInterval = 0.4f; // 足音の間隔
+
+
     void Awake()
     {
         // ゲーム開始時（最初のシーン）で、まだHPが初期化されていない場合は最大値にする
@@ -188,6 +192,7 @@ public class Player : MonoBehaviour
 
                 jumpCount++;
             }
+
         }
 
         // 可変ジャンプ
@@ -217,6 +222,9 @@ public class Player : MonoBehaviour
         }
 
         UpdateAnimation();
+
+        HandleWalkSE();
+
     }
 
     void UpdateAnimation()
@@ -313,6 +321,11 @@ public class Player : MonoBehaviour
     {
         isAttacking = true;
 
+        Debug.Log($"AudioManager.Instance: {AudioManager.Instance}");
+        Debug.Log($"attackSE: {AudioManager.Instance?.attackSE}");
+
+        AudioManager.Instance.Play(AudioManager.Instance.attackSE);
+
         float dir = spriteRenderer.flipX ? -1f : 1f;
         attackHitbox.transform.localPosition = new Vector2(
             hitboxOffsetX * dir,
@@ -333,6 +346,7 @@ public class Player : MonoBehaviour
     {
         rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
         rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+        AudioManager.Instance.Play(AudioManager.Instance.jumpSE);
     }
 
     void ApplyBetterJumpGravity()
@@ -460,4 +474,22 @@ public class Player : MonoBehaviour
             yield return null;
         }
     }
+
+    void HandleWalkSE()
+    {
+        if (isGrounded && Mathf.Abs(moveInput) > 0 && !isDashing)
+        {
+            walkSETimer -= Time.deltaTime;
+            if (walkSETimer <= 0)
+            {
+                AudioManager.Instance.Play(AudioManager.Instance.walkSE);
+                walkSETimer = walkSEInterval;
+            }
+        }
+        else
+        {
+            walkSETimer = 0;
+        }
+    }
+
 }
