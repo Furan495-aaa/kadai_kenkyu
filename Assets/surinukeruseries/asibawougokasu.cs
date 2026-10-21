@@ -3,67 +3,54 @@ using UnityEngine;
 [RequireComponent(typeof(SpriteRenderer))]
 public class MovingPlatform : MonoBehaviour
 {
-    public enum MoveAxis
-    {
-        Horizontal, // 左右
-        Vertical    // 上下
-    }
-
-    public enum MoveType
-    {
-        PingPong,   // 往復運動する
-        OneShot     // 端まで行ったら停止する
-    }
+    public enum MoveAxis { Horizontal, Vertical }
+    public enum MoveType { PingPong, OneShot }
+    public enum MoveTrigger { Always, OnPlayerRide }
 
     [Header("移動の有無")]
     [SerializeField] private bool isMovingPlatform = true;
 
+    [Header("移動のタイミング（トリガー）")]
+    [SerializeField] private MoveTrigger moveTrigger = MoveTrigger.Always;
+
     [Header("移動設定")]
     [SerializeField] private MoveAxis moveAxis = MoveAxis.Horizontal;
     [SerializeField] private MoveType moveType = MoveType.PingPong;
-    [SerializeField] private float speed = 3.0f;       // 1秒間に進むメートル数
-    [SerializeField] private float moveDistance = 4.0f;  // 移動する距離（片道、または往復の幅）
+    [SerializeField] private float speed = 3.0f;
+    [SerializeField] private float moveDistance = 4.0f;
 
     [Header("最初の移動方向")]
     [Tooltip("チェックが入っていれば【右 / 上】へ、外していれば【左 / 下】へ最初に向かいます")]
     [SerializeField] private bool startTowardPositive = true; 
 
-    private Vector2 posA; // 移動の端A
-    private Vector2 posB; // 移動の端B
-    private Vector2 currentDestination; // 現在目指している目的地
+    private Vector2 posA;
+    private Vector2 posB;
+    private Vector2 currentDestination;
 
     private bool hasReachedEnd = false;
+    private bool hasStartedMoving = false;
     private SpriteRenderer spriteRenderer;
+
+    private Transform ridingPlayer = null; // 現在乗っているプレイヤー
 
     void Start()
     {
+        // 配置した場所をそのままスタート位置とする
         Vector2 startPos = transform.position;
-
-        // 基準となるプラス方向ベクトル
         Vector2 dir = (moveAxis == MoveAxis.Horizontal) ? Vector2.right : Vector2.up;
+
+        posA = startPos - (dir * moveDistance);
+        posB = startPos + (dir * moveDistance);
 
         if (moveType == MoveType.PingPong)
         {
-            // 往復モード：配置した場所を中心として両端を計算
-            posA = startPos - (dir * moveDistance);
-            posB = startPos + (dir * moveDistance);
-
-            // ★修正: ゲーム開始時に勝手にワープさせず、
-            // 「チェックが入っているなら右/上の端」へ、「外しているなら左/下の端」へ
-            // 一番近い状態から自然に動くよう、現在の位置から近い方の端を目的地にする、
-            // または設定された向きに合わせて最初の目的地を決定する
-            if (startTowardPositive)
-            {
-                currentDestination = posB;
-            }
-            else
-            {
-                currentDestination = posA;
-            }
+            // ★修正: 勝手に transform.position を書き換えてワープさせない！
+            // 配置された現在位置のまま、最初に向かう目的地（端）だけを決定する
+            currentDestination = startTowardPositive ? posB : posA;
         }
         else
         {
-            // 片道モード：配置した場所からスタート
+            // 片道モードの場合も同様に現在地からスタート
             posA = startPos;
             Vector2 oneShotDir = startTowardPositive ? dir : -dir;
             posB = startPos + (oneShotDir * moveDistance);
@@ -71,8 +58,8 @@ public class MovingPlatform : MonoBehaviour
         }
 
         hasReachedEnd = false;
+        hasStartedMoving = (moveTrigger == MoveTrigger.Always);
 
-        // 描画範囲の拡張（大きな値を設定しても消えないようにする）
         spriteRenderer = GetComponent<SpriteRenderer>();
         if (spriteRenderer != null)
         {
@@ -85,19 +72,32 @@ public class MovingPlatform : MonoBehaviour
     void Update()
     {
         if (!isMovingPlatform) return;
+        if (!hasStartedMoving) return;
         if (moveType == MoveType.OneShot && hasReachedEnd) return;
 
-        // 現在地から目的地に向かって移動
+        // 移動前の足場の位置を保存
+        Vector2 oldPos = transform.position;
+
+        // 目的地に向かって一定の速度で移動
         transform.position = Vector2.MoveTowards(transform.position, currentDestination, speed * Time.deltaTime);
 
-        // 目的地に十分近づいたか判定
+        // 足場の移動量を計算
+        Vector2 platformDelta = (Vector2)transform.position - oldPos;
+
+        // プレイヤーが乗っていれば、足場の移動量だけプレイヤーを動かす（立ち絵が傾かない・滑らない）
+        if (ridingPlayer != null)
+        {
+            ridingPlayer.position += (Vector3)platformDelta;
+        }
+
+        // 目的地に到達したかチェック
         if (Vector2.Distance(transform.position, currentDestination) < 0.005f)
         {
             transform.position = currentDestination;
 
             if (moveType == MoveType.PingPong)
             {
-                // 目的地に着いたら、AとBを入れ替えて反対側へ向かう
+                // 目的地を反対側の端に切り替える
                 currentDestination = (currentDestination == posB) ? posA : posB;
             }
             else if (moveType == MoveType.OneShot)
@@ -114,13 +114,19 @@ public class MovingPlatform : MonoBehaviour
             Player player = collision.gameObject.GetComponent<Player>();
             if (player != null && player.IsGrounded)
             {
-                collision.transform.SetParent(transform);
+                if (moveTrigger == MoveTrigger.OnPlayerRide && !hasStartedMoving)
+                {
+                    hasStartedMoving = true;
+                }
+
+                // 乗っているプレイヤーを記憶
+                ridingPlayer = collision.transform;
             }
             else
             {
-                if (collision.transform.parent == transform)
+                if (ridingPlayer == collision.transform)
                 {
-                    collision.transform.SetParent(null);
+                    ridingPlayer = null;
                 }
             }
         }
@@ -130,7 +136,10 @@ public class MovingPlatform : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Player"))
         {
-            collision.transform.SetParent(null);
+            if (ridingPlayer == collision.transform)
+            {
+                ridingPlayer = null;
+            }
         }
     }
 
@@ -145,7 +154,6 @@ public class MovingPlatform : MonoBehaviour
 
         if (moveType == MoveType.PingPong)
         {
-            // 往復モードのときは、現在地を中心として両側に moveDistance 分の線を引く
             Vector2 p1 = origin - (dir * moveDistance);
             Vector2 p2 = origin + (dir * moveDistance);
 
@@ -155,7 +163,6 @@ public class MovingPlatform : MonoBehaviour
         }
         else
         {
-            // 片道モードのときは、現在地から指定方向へ moveDistance 進む線を引く
             Vector2 oneShotDir = startTowardPositive ? dir : -dir;
             Vector2 dest = origin + (oneShotDir * moveDistance);
 
