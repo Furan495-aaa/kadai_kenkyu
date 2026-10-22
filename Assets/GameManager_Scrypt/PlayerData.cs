@@ -28,7 +28,7 @@ public class PlayerData : MonoBehaviour
 
         currentHP = maxHP;
 
-        // ★追加: 起動時にHPバーを初期化
+        // 起動時にHPバーを初期化
         UpdateHPBar();
 
         SceneManager.sceneLoaded += OnSceneLoaded;
@@ -51,7 +51,7 @@ public class PlayerData : MonoBehaviour
         UpdateHPBar();
     }
 
-    // ★追加: 遅延バーの追従処理
+    // 遅延バーの追従処理
     private void Update()
     {
         if (hpBarDelay == null) return;
@@ -72,7 +72,7 @@ public class PlayerData : MonoBehaviour
 
         Debug.Log($"ダメージ: {damage}  現在HP: {currentHP}");
 
-        // ★追加: ダメージ時にHPバーを更新
+        // ダメージ時にHPバーを更新
         UpdateHPBar();
 
         if (currentHP <= 0)
@@ -89,7 +89,7 @@ public class PlayerData : MonoBehaviour
         }
     }
 
-    // ★追加: 回復処理
+    // 回復処理
     public void Heal(int amount)
     {
         currentHP = Mathf.Min(currentHP + amount, maxHP);
@@ -97,7 +97,7 @@ public class PlayerData : MonoBehaviour
         UpdateHPBar();
     }
 
-    // ★追加: HPバー更新
+    // HPバー更新
     private void UpdateHPBar()
     {
         if (hpBarFill == null) return;
