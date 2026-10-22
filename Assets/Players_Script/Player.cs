@@ -229,7 +229,12 @@ public class Player : MonoBehaviour
 
     void UpdateAnimation()
     {
-        anim.SetBool("Walk", moveInput != 0 && isGrounded);
+        // ★修正: 完全な接地（isGrounded）だけでなく、
+        // コヨーテタイム（coyoteTimer > 0）の猶予期間中も歩きアニメーションを許可する
+        bool isMoving = moveInput != 0;
+        bool canWalk = isMoving && (isGrounded || coyoteTimer > 0);
+
+        anim.SetBool("Walk", canWalk);
         anim.SetBool("isGrounded", isGrounded);
         anim.SetFloat("velocityY", rb.linearVelocity.y);
         anim.SetBool("isAttacking", isAttacking);
