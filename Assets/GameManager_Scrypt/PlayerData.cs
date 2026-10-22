@@ -36,6 +36,9 @@ public class PlayerData : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
+        currentHP = maxHP;
+
+        Time.timeScale = 1f;
         // シーン内の HPBarFill タグのオブジェクトを自動で探す
         GameObject fillObj = GameObject.FindWithTag("HPBarFill");
         if (fillObj != null)
@@ -65,6 +68,8 @@ public class PlayerData : MonoBehaviour
 
     public void TakeDamage(int damage)
     {
+        if (currentHP <= 0) return;
+
         currentHP -= damage;
 
         if (currentHP < 0)
@@ -112,5 +117,40 @@ public class PlayerData : MonoBehaviour
     private void Die()
     {
         Debug.Log("プレイヤー死亡");
+
+       
+    
+
+        // Instance が null でも直接探しに行く
+        GameOverManager manager =
+            FindFirstObjectByType<GameOverManager>();
+
+        if (manager == null)
+        {
+            Debug.LogError("GameOverManager がシーンに存在しません！");
+            return;
+        }
+
+        manager.ShowGameOver();
+    
+
+    GameOverManager[] managers =
+        FindObjectsByType<GameOverManager>(FindObjectsSortMode.None);
+
+        Debug.Log($"シーン内の GameOverManager の数: {managers.Length}");
+
+        foreach (var m in managers)
+        {
+            Debug.Log($"見つかった: {m.gameObject.name} " +
+                      $"アクティブ: {m.gameObject.activeInHierarchy}");
+        }
+
+        if (GameOverManager.Instance == null)
+        {
+            Debug.LogError("GameOverManager が見つかりません！");
+            return;
+        }
+
+        GameOverManager.Instance.ShowGameOver();
     }
 }
