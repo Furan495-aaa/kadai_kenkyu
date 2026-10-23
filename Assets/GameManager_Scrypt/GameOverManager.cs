@@ -5,19 +5,33 @@ public class GameOverManager : MonoBehaviour
 {
     public static GameOverManager Instance;
 
-    // ★GameOverUI の中身だけを非表示にする用
     [SerializeField] private GameObject gameOverContent;
 
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         Instance = this;
 
-        // 自分自身はアクティブのまま、中身だけ非表示にする
-        gameOverContent.SetActive(false);
+        // ★GameOverUI ごと残し続ける
+        DontDestroyOnLoad(gameObject);
+
+        if (gameOverContent != null)
+            gameOverContent.SetActive(false);
     }
 
     public void ShowGameOver()
     {
+        if (gameOverContent == null)
+        {
+            Debug.LogError("gameOverContent が null です！");
+            return;
+        }
+
         Time.timeScale = 0f;
         gameOverContent.SetActive(true);
     }
@@ -25,6 +39,11 @@ public class GameOverManager : MonoBehaviour
     public void OnRetryButton()
     {
         Time.timeScale = 1f;
+
+        // ★リスタート前にUIを非表示に
+        if (gameOverContent != null)
+            gameOverContent.SetActive(false);
+
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 }
