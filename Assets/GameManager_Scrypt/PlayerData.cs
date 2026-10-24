@@ -46,7 +46,7 @@ public class PlayerData : MonoBehaviour
 
         UpdateHPBar();
 
-        currentHP = maxHP;
+       currentHP = maxHP;
 
         if (fillObj != null)
             hpBarFill = fillObj.GetComponent<Image>();
