@@ -9,11 +9,11 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8842094285566570877}
-  - component: {fileID: -8688260561627262458}
-  - component: {fileID: 3763284791539240836}
   - component: {fileID: 9049308003892148925}
   - component: {fileID: 8799101756794833226}
   - component: {fileID: 5569865924948535882}
+  - component: {fileID: -8688260561627262458}
+  - component: {fileID: 3763284791539240836}
   - component: {fileID: 3063008666261695193}
   m_Layer: 0
   m_Name: Enemy_Pre_A
@@ -37,45 +37,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &-8688260561627262458
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3832886029872179272}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7c8c7ae87c43f624f971db3afeda3972, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Enemy_Pre_A
-  moveSpeed: 2
-  groundLayer:
-    serializedVersion: 2
-    m_Bits: 8
-  groundCheckDistance: 0.8
-  wallCheckDistance: 0.4
-  searchRadius: 5
-  targetTag: Player
---- !u!114 &3763284791539240836
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3832886029872179272}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0301b1da9837c6545b53b54e182e3d89, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Enemy_Attack_B
-  target: {fileID: 0}
-  enemiesBullet: {fileID: 6692266960357395196, guid: 5d7f5f1082926014da00a9f4d629f0c0, type: 3}
-  bulletSpeedX: 7
-  bulletSpeedY: 1
-  adjustPosX: 0.2
-  adjustPosY: 0
-  intervalTime: 2
 --- !u!212 &9049308003892148925
 SpriteRenderer:
   serializedVersion: 2
@@ -196,7 +157,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: -0.00008916855, y: -0.00012397766}
+  m_Offset: {x: 0, y: 0}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -206,8 +167,47 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 0.60584736, y: 0.7990265}
+  m_Size: {x: 0.875, y: 0.875}
   m_EdgeRadius: 0.001
+--- !u!114 &-8688260561627262458
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3832886029872179272}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c8c7ae87c43f624f971db3afeda3972, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Enemy_Pre_A
+  moveSpeed: 2
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 8
+  groundCheckDistance: 0.8
+  wallCheckDistance: 0.4
+  searchRadius: 5
+  targetTag: Player
+--- !u!114 &3763284791539240836
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3832886029872179272}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0301b1da9837c6545b53b54e182e3d89, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Enemy_Attack_B
+  target: {fileID: 0}
+  enemiesBullet: {fileID: 6692266960357395196, guid: 5d7f5f1082926014da00a9f4d629f0c0, type: 3}
+  bulletSpeedX: 7
+  bulletSpeedY: 1
+  adjustPosX: 0.2
+  adjustPosY: 0
+  intervalTime: 2
 --- !u!114 &3063008666261695193
 MonoBehaviour:
   m_ObjectHideFlags: 0
