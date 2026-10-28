@@ -9,22 +9,17 @@ public class Enemy_Pre_A : MonoBehaviour
     private Rigidbody2D rb;
 
     [Header("検知の設定")]
-    [SerializeField] private LayerMask groundLayer;     // 地面や壁と判定するレイヤー
-    [SerializeField] private float groundCheckDistance = 0.8f; // 足元の検知距離
+    [SerializeField] private LayerMask groundLayer;         // 地面や壁と判定するレイヤー
     [SerializeField] private float wallCheckDistance = 0.4f;   // 前方の壁の検知距離
 
     [Header("索敵の設定")]
-    [SerializeField] private float searchRadius = 5.0f; // プレイヤーを見つける円の半径
-    [SerializeField] private string targetTag = "Player"; // 検索する対象のタグ名
-    private Transform detectedPlayer;                   // 見つけたプレイヤーのトランスフォーム
-
-    // プレイヤーを一度検知したかを保持するフラグ
+    [SerializeField] private float searchRadius = 5.0f;     // プレイヤーを見つける円の半径
+    [SerializeField] private string targetTag = "Player";     // 検索する対象のタグ名
+    [SerializeField] private float turnThreshold = 0.15f;     // 真上でのバタつきを防ぐためのしきい値
+    
+    private Transform detectedPlayer;                       // 見つけたプレイヤー
     private bool isChasing = false;
-
-    // 向きを管理するフラグ（true: 右向き, false: 左向き）
     private bool isFacingRight = true;
-
-    // 当たり判定（Collider2D）
     private Collider2D enemyCollider;
 
     void Start()
@@ -32,73 +27,56 @@ public class Enemy_Pre_A : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         enemyCollider = GetComponent<Collider2D>();
         
-        // 初期スケールから向きを推測
-        if (transform.localScale.x < 0)
-        {
-            isFacingRight = false;
-        }
-        else
-        {
-            isFacingRight = true;
-        }
+        // 摩擦ゼロのマテリアルを適用
+        enemyCollider.sharedMaterial = new PhysicsMaterial2D("EnemySmooth") { friction = 0f, bounciness = 0f };
+
+        isFacingRight = transform.localScale.x >= 0;
     }
 
     void Update()
     {
         if (enemyCollider == null) return;
-
         Vector2 center = enemyCollider.bounds.center;
 
-        // 1. 周囲にあるすべてのColliderを検知して、その中からプレイヤーが索敵範囲内にいるか調べる
-        bool isPlayerInRadius = false;
+        // 1. プレイヤーの索敵（軽量化のためヒットした最初の1つを効率よく取得）
+        detectedPlayer = null;
         Collider2D[] hitColliders = Physics2D.OverlapCircleAll(center, searchRadius);
         foreach (var col in hitColliders)
         {
             if (col.CompareTag(targetTag))
             {
                 detectedPlayer = col.transform;
-                isPlayerInRadius = true;
                 break;
             }
         }
+        isChasing = (detectedPlayer != null);
 
-        // 2. 追跡状態の切り替え（範囲内なら追う、範囲外に出たら追跡をやめる）
-        if (isPlayerInRadius)
-        {
-            isChasing = true; // 範囲内にいるので追跡モードをON
-        }
-        else
-        {
-            isChasing = false; // 範囲外に出たので追跡モードを解除（通常の巡回へ）
-            detectedPlayer = null;
-        }
-
-        // 3. 進行方向の決定
-        Vector2 checkDirection = isFacingRight ? Vector2.right : Vector2.left;
-
-        // 4. 自身のコライダーに当たらないよう、少し外側からレイを飛ばす計算
+        // 2. 進行方向のレイキャスト判定（壁チェック）
         float halfWidth = enemyCollider.bounds.extents.x;
         float halfHeight = enemyCollider.bounds.extents.y;
 
         Vector2 wallCheckPos = new Vector2(center.x + (halfWidth + 0.1f) * (isFacingRight ? 1 : -1), center.y);
         Vector2 groundCheckPos = new Vector2(center.x + (halfWidth + 0.2f) * (isFacingRight ? 1 : -1), center.y - halfHeight + 0.1f);
 
-        bool isWallAhead = Physics2D.Raycast(wallCheckPos, checkDirection, wallCheckDistance, groundLayer);
-        bool isGroundAhead = Physics2D.Raycast(groundCheckPos, Vector2.down, groundCheckDistance, groundLayer);
+        bool isWallAhead = Physics2D.Raycast(wallCheckPos, isFacingRight ? Vector2.right : Vector2.left, wallCheckDistance, groundLayer);
+        bool isGroundAhead = Physics2D.Raycast(groundCheckPos, Vector2.down, 0.8f, groundLayer);
 
-        // 5. 【最優先】壁がある、または足元に地面がない場合：追跡中であっても強制的に反転する（崖から落ちない）
+        // 3. 【最優先】壁や崖がある場合は強制反転
         if (isWallAhead || !isGroundAhead)
         {
             Flip();
         }
-        // 6. 追跡中（isChasingがtrue）の場合：プレイヤーの方向を向く
-        else if (isChasing && detectedPlayer != null)
+        // 4. 追跡中：プレイヤーの方向を向く（真上でのバタつき防止対応）
+        else if (isChasing)
         {
-            if (detectedPlayer.position.x > transform.position.x && !isFacingRight)
+            float xDiff = detectedPlayer.position.x - transform.position.x;
+
+            // X座標の差が「turnThreshold」以上離れているときだけ向きを変える
+            if (xDiff > turnThreshold && !isFacingRight)
             {
                 Flip();
             }
-            else if (detectedPlayer.position.x < transform.position.x && isFacingRight)
+            else if (xDiff < -turnThreshold && isFacingRight)
             {
                 Flip();
             }
@@ -107,50 +85,22 @@ public class Enemy_Pre_A : MonoBehaviour
 
     void FixedUpdate()
     {
-        Walk();
-    }
-
-    private void Walk()
-    {
-        if (isFacingRight)
-        {
-            rb.linearVelocityX = moveSpeed;
-        }
-        else
-        {
-            rb.linearVelocityX = -moveSpeed;
-        }
+        rb.linearVelocityX = isFacingRight ? moveSpeed : -moveSpeed;
     }
 
     private void Flip()
     {
         isFacingRight = !isFacingRight;
-
         Vector3 localScale = transform.localScale;
         localScale.x *= -1;
         transform.localScale = localScale;
     }
 
-    // UnityエディタのSceneビューで確認用のギズモを描画
     private void OnDrawGizmosSelected()
     {
         Collider2D col = GetComponent<Collider2D>();
         if (col == null) return;
-
-        Vector2 center = col.bounds.center;
-        float halfWidth = col.bounds.extents.x;
-        float halfHeight = col.bounds.extents.y;
-
-        Vector2 wallCheckPos = new Vector2(center.x + halfWidth + 0.1f, center.y);
-        Vector2 groundCheckPos = new Vector2(center.x + halfWidth + 0.2f, center.y - halfHeight + 0.1f);
-
-        Gizmos.color = Color.green;
-        Gizmos.DrawLine(wallCheckPos, wallCheckPos + Vector2.right * wallCheckDistance);
-
-        Gizmos.color = Color.blue;
-        Gizmos.DrawLine(groundCheckPos, groundCheckPos + Vector2.down * groundCheckDistance);
-
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(center, searchRadius);
+        Gizmos.DrawWireSphere(col.bounds.center, searchRadius);
     }
 }

@@ -7,100 +7,79 @@ public class MovingPlatform : MonoBehaviour
     public enum MoveType { PingPong, OneShot }
     public enum MoveTrigger { Always, OnPlayerRide }
 
-    [Header("移動の有無")]
-    [SerializeField] private bool isMovingPlatform = true;
-
-    [Header("移動のタイミング（トリガー）")]
-    [SerializeField] private MoveTrigger moveTrigger = MoveTrigger.Always;
-
     [Header("移動設定")]
+    [SerializeField] private bool isMovingPlatform = true;
+    [SerializeField] private MoveTrigger moveTrigger = MoveTrigger.Always;
     [SerializeField] private MoveAxis moveAxis = MoveAxis.Horizontal;
     [SerializeField] private MoveType moveType = MoveType.PingPong;
     [SerializeField] private float speed = 3.0f;
     [SerializeField] private float moveDistance = 4.0f;
 
     [Header("最初の移動方向")]
-    [Tooltip("チェックが入っていれば【右 / 上】へ、外していれば【左 / 下】へ最初に向かいます")]
     [SerializeField] private bool startTowardPositive = true; 
 
     private Vector2 posA;
     private Vector2 posB;
     private Vector2 currentDestination;
 
-    private bool hasReachedEnd = false;
-    private bool hasStartedMoving = false;
-    private SpriteRenderer spriteRenderer;
-
-    private Transform ridingPlayer = null; // 現在乗っているプレイヤー
+    private bool hasReachedEnd;
+    private bool hasStartedMoving;
+    private Transform ridingPlayer;
 
     void Start()
     {
-        // 配置した場所をそのままスタート位置とする
         Vector2 startPos = transform.position;
         Vector2 dir = (moveAxis == MoveAxis.Horizontal) ? Vector2.right : Vector2.up;
 
-        posA = startPos - (dir * moveDistance);
-        posB = startPos + (dir * moveDistance);
-
         if (moveType == MoveType.PingPong)
         {
-            // ★修正: 勝手に transform.position を書き換えてワープさせない！
-            // 配置された現在位置のまま、最初に向かう目的地（端）だけを決定する
+            posA = startPos - (dir * moveDistance);
+            posB = startPos + (dir * moveDistance);
             currentDestination = startTowardPositive ? posB : posA;
         }
         else
         {
-            // 片道モードの場合も同様に現在地からスタート
             posA = startPos;
-            Vector2 oneShotDir = startTowardPositive ? dir : -dir;
-            posB = startPos + (oneShotDir * moveDistance);
+            posB = startPos + (startTowardPositive ? dir : -dir) * moveDistance;
             currentDestination = posB;
         }
 
-        hasReachedEnd = false;
         hasStartedMoving = (moveTrigger == MoveTrigger.Always);
 
-        spriteRenderer = GetComponent<SpriteRenderer>();
-        if (spriteRenderer != null)
+        // スプライトのBounds拡張（画面外で消えるのを防ぐ）
+        SpriteRenderer sr = GetComponent<SpriteRenderer>();
+        if (sr != null)
         {
-            Bounds localBounds = spriteRenderer.localBounds;
-            localBounds.Expand(moveDistance * 4f); 
-            spriteRenderer.localBounds = localBounds;
+            Bounds b = sr.localBounds;
+            b.Expand(moveDistance * 4f); 
+            sr.localBounds = b;
         }
     }
 
     void Update()
     {
-        if (!isMovingPlatform) return;
-        if (!hasStartedMoving) return;
-        if (moveType == MoveType.OneShot && hasReachedEnd) return;
+        if (!isMovingPlatform || !hasStartedMoving || (moveType == MoveType.OneShot && hasReachedEnd))
+            return;
 
-        // 移動前の足場の位置を保存
         Vector2 oldPos = transform.position;
 
-        // 目的地に向かって一定の速度で移動
+        // 一定速度で移動
         transform.position = Vector2.MoveTowards(transform.position, currentDestination, speed * Time.deltaTime);
 
-        // 足場の移動量を計算
-        Vector2 platformDelta = (Vector2)transform.position - oldPos;
-
-        // プレイヤーが乗っていれば、足場の移動量だけプレイヤーを動かす（立ち絵が傾かない・滑らない）
+        // 乗っているプレイヤーを一緒に動かす
         if (ridingPlayer != null)
         {
-            ridingPlayer.position += (Vector3)platformDelta;
+            ridingPlayer.position += (Vector3)((Vector2)transform.position - oldPos);
         }
 
-        // 目的地に到達したかチェック
-        if (Vector2.Distance(transform.position, currentDestination) < 0.005f)
+        // 目的地に到着したか判定
+        if ((Vector2)transform.position == currentDestination)
         {
-            transform.position = currentDestination;
-
             if (moveType == MoveType.PingPong)
             {
-                // 目的地を反対側の端に切り替える
                 currentDestination = (currentDestination == posB) ? posA : posB;
             }
-            else if (moveType == MoveType.OneShot)
+            else
             {
                 hasReachedEnd = true;
             }
@@ -118,28 +97,20 @@ public class MovingPlatform : MonoBehaviour
                 {
                     hasStartedMoving = true;
                 }
-
-                // 乗っているプレイヤーを記憶
                 ridingPlayer = collision.transform;
             }
-            else
+            else if (ridingPlayer == collision.transform)
             {
-                if (ridingPlayer == collision.transform)
-                {
-                    ridingPlayer = null;
-                }
+                ridingPlayer = null;
             }
         }
     }
 
     private void OnCollisionExit2D(Collision2D collision)
     {
-        if (collision.gameObject.CompareTag("Player"))
+        if (collision.gameObject.CompareTag("Player") && ridingPlayer == collision.transform)
         {
-            if (ridingPlayer == collision.transform)
-            {
-                ridingPlayer = null;
-            }
+            ridingPlayer = null;
         }
     }
 
@@ -147,28 +118,24 @@ public class MovingPlatform : MonoBehaviour
     {
         if (!isMovingPlatform) return;
 
-        Vector2 origin = transform.position;
         Gizmos.color = Color.red;
-
+        Vector2 origin = transform.position;
         Vector2 dir = (moveAxis == MoveAxis.Horizontal) ? Vector2.right : Vector2.up;
 
+        Vector2 p1, p2;
         if (moveType == MoveType.PingPong)
         {
-            Vector2 p1 = origin - (dir * moveDistance);
-            Vector2 p2 = origin + (dir * moveDistance);
-
-            Gizmos.DrawLine(p1, p2);
-            Gizmos.DrawWireSphere(p1, 0.2f);
-            Gizmos.DrawWireSphere(p2, 0.2f);
+            p1 = origin - (dir * moveDistance);
+            p2 = origin + (dir * moveDistance);
         }
         else
         {
-            Vector2 oneShotDir = startTowardPositive ? dir : -dir;
-            Vector2 dest = origin + (oneShotDir * moveDistance);
-
-            Gizmos.DrawLine(origin, dest);
-            Gizmos.DrawWireSphere(origin, 0.2f);
-            Gizmos.DrawWireSphere(dest, 0.2f);
+            p1 = origin;
+            p2 = origin + (startTowardPositive ? dir : -dir) * moveDistance;
         }
+
+        Gizmos.DrawLine(p1, p2);
+        Gizmos.DrawWireSphere(p1, 0.2f);
+        Gizmos.DrawWireSphere(p2, 0.2f);
     }
 }

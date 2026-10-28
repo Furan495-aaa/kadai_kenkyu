@@ -5,15 +5,12 @@ public class Player : MonoBehaviour
 {
     [Header("HP設定")]
     public int maxHp = 5;
-    // staticにすることで、シーンが切り替わってもHPの数値を記憶し続けられます
     private static int currentHp = -1; 
 
     [Header("移動")]
     public float maxSpeed = 8f;
-
     public float groundAcceleration = 25f;
     public float groundDeceleration = 30f;
-
     public float airAcceleration = 15f;
     public float airDeceleration = 10f;
 
@@ -26,13 +23,28 @@ public class Player : MonoBehaviour
     private float dashCooldownTimer;
     private bool hasAirDashed; 
 
-    private float lastLeftPressTime;
-    private float lastRightPressTime;
-
-    public float doubleTapTime = 0.3f;
-
     [Header("ジャンプ")]
     public float jumpForce = 14f;
+    [Header("二段ジャンプ")]
+    public int maxJumpCount = 2;
+    [Header("可変ジャンプ")]
+    public float jumpCutMultiplier = 0.5f;
+
+    [Header("重力")]
+    public float normalGravity = 3f;
+    public float fallGravity = 6f;
+    public float lowJumpGravity = 5f;
+    public float maxFallSpeed = -20f;
+
+    [Header("判定猶予 (Coyote / Buffer)")]
+    [Tooltip("足場から離れてもジャンプできる猶予時間（0.166秒 ＝ 60fpsで約10フレーム）")]
+    public float coyoteTime = 0.166f;
+    public float jumpBufferTime = 0.1f;
+
+    [Header("接地判定")]
+    public Transform groundCheck;
+    public float groundCheckRadius = 0.2f;
+    public LayerMask groundLayer;
 
     [Header("攻撃")]
     public GameObject attackHitbox;
@@ -41,60 +53,33 @@ public class Player : MonoBehaviour
     public int attackDamage = 1;
     public float hitboxOffsetX = 0.8f;
 
-    [Header("二段ジャンプ")]
-    public int maxJumpCount = 2;
-
-    [Header("可変ジャンプ")]
-    public float jumpCutMultiplier = 0.5f;
-
-    [Header("重力")]
-    public float normalGravity = 3f;
-    public float fallGravity = 6f;
-    public float lowJumpGravity = 5f;
-
-    [Header("落下")]
-    public float maxFallSpeed = -20f;
-
-    [Header("Coyote Time")]
-    public float coyoteTime = 0.1f;
-
-    [Header("Jump Buffer")]
-    public float jumpBufferTime = 0.1f;
-
-    [Header("接地判定")]
-    public Transform groundCheck;
-    public float groundCheckRadius = 0.2f;
-    public LayerMask groundLayer;
+    [Header("足音")]
+    public float walkSEInterval = 0.4f;
 
     private bool isAttacking;
     private float attackCooldownTimer;
     private Rigidbody2D rb;
     private SpriteRenderer spriteRenderer;
     private Animator anim;
+    private Collider2D playerCollider;
+
+    private PhysicsMaterial2D smoothMaterial;
+    private PhysicsMaterial2D frictionMaterial;
 
     private float moveInput;
-
     private bool isGrounded;
-
     private float coyoteTimer;
     private float jumpBufferTimer;
-
     private int jumpCount;
-
-    // 操作可能かどうかを管理するフラグ（ゴール時用）
     private bool canControl = true;
-
     private float walkSETimer;
-    public float walkSEInterval = 0.4f; // 足音の間隔
-
 
     void Awake()
     {
-        // ゲーム開始時（最初のシーン）で、まだHPが初期化されていない場合は最大値にする
-        if (currentHp < 0)
-        {
-            currentHp = maxHp;
-        }
+        if (currentHp < 0) currentHp = maxHp;
+
+        smoothMaterial = new PhysicsMaterial2D("PlayerSmooth") { friction = 0f, bounciness = 0f };
+        frictionMaterial = new PhysicsMaterial2D("PlayerFriction") { friction = 100f, bounciness = 0f };
     }
 
     void Start()
@@ -102,65 +87,47 @@ public class Player : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         anim = GetComponent<Animator>();
-
-        Debug.Log("現在のHP: " + currentHp); // 引き継ぎ確認用
+        playerCollider = GetComponent<Collider2D>();
     }
 
     void Update()
     {
-        // 操作不可（ゴール後など）なら、Update内の入力を一切受け付けない
         if (!canControl) return;
 
-        // 横移動入力
+        // 横移動・反転処理
         moveInput = Input.GetAxisRaw("Horizontal");
-
-        if (moveInput > 0)
+        if (moveInput != 0)
         {
-            spriteRenderer.flipX = false;
-        }
-        else if (moveInput < 0)
-        {
-            spriteRenderer.flipX = true;
+            spriteRenderer.flipX = (moveInput < 0);
         }
 
-        if (dashCooldownTimer > 0)
-        {
-            dashCooldownTimer -= Time.deltaTime;
-        }
+        if (dashCooldownTimer > 0) dashCooldownTimer -= Time.deltaTime;
 
         HandleDashInput();
 
-        // 上昇中（足場を下からすり抜けている時など）は、接地判定を強制的にfalseにする
-        if (rb.linearVelocity.y > 0.1f)
-        {
-            isGrounded = false;
-        }
-        else
-        {
-            // 接地判定
-            isGrounded = Physics2D.OverlapCircle(
-                groundCheck.position,
-                groundCheckRadius,
-                groundLayer
-            );
-        }
+        // --- 接地判定 & コヨーテタイムの更新 ---
+        bool wasGrounded = isGrounded;
+        isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
 
-        // Coyote Time / 着地時のリセット処理
         if (isGrounded)
         {
-            coyoteTimer = coyoteTime;
-
-            // 地面についたらジャンプ回数回復
-            jumpCount = 0;
-
-            hasAirDashed = false; 
+            coyoteTimer = coyoteTime; // 地上にいる間は常にタイマーを最大値に維持
+            jumpCount = 0;            // 地上についたらジャンプ回数リセット
+            hasAirDashed = false;     // 空中ダッシュもリセット
         }
         else
         {
+            // 地上から空中に外れた瞬間からタイマーを減らす
             coyoteTimer -= Time.deltaTime;
         }
 
-        // Jump Buffer
+        // 坂道での滑り止め切り替え
+        if (playerCollider != null)
+        {
+            playerCollider.sharedMaterial = (isGrounded && moveInput == 0 && !isDashing) ? frictionMaterial : smoothMaterial;
+        }
+
+        // ジャンプバッファー（ボタンが押された瞬間を記憶）
         if (Input.GetButtonDown("Jump"))
         {
             jumpBufferTimer = jumpBufferTime;
@@ -170,71 +137,55 @@ public class Player : MonoBehaviour
             jumpBufferTimer -= Time.deltaTime;
         }
 
-        // ジャンプ処理
+        // --- ジャンプ実行判定 ---
         if (jumpBufferTimer > 0)
         {
-            // 地上ジャンプ
-            if (coyoteTimer > 0)
+            // 地上ジャンプ または コヨーテタイム猶予内のジャンプ
+            if (coyoteTimer > 0 || isGrounded)
             {
                 Jump();
-
                 jumpBufferTimer = 0;
-                coyoteTimer = 0;
-
-                jumpCount = 1;
+                coyoteTimer = 0;     // 連続ジャンプ防止
+                jumpCount = 1;       // 地上ジャンプとして1回分カウント
             }
-            // 空中ジャンプ
+            // 空中ジャンプ（二段ジャンプなど）
             else if (jumpCount < maxJumpCount)
             {
                 Jump();
-
                 jumpBufferTimer = 0;
-
                 jumpCount++;
             }
-
         }
 
-        // 可変ジャンプ
-        if (Input.GetButtonUp("Jump") &&
-            rb.linearVelocity.y > 0)
+        // 可変ジャンプ（ボタンを離したときに上昇を抑える）
+        if (Input.GetButtonUp("Jump") && rb.linearVelocity.y > 0)
         {
-            rb.linearVelocity = new Vector2(
-                rb.linearVelocity.x,
-                rb.linearVelocity.y * jumpCutMultiplier
-            );
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * jumpCutMultiplier);
         }
 
-        // ダッシュ中でない場合のみ重力と最大落下速度を制御
         if (!isDashing)
         {
             ApplyBetterJumpGravity();
             ClampFallSpeed();
         }
-        // 攻撃クールダウン
-        if (attackCooldownTimer > 0)
-            attackCooldownTimer -= Time.deltaTime;
 
-        // 攻撃入力（攻撃中・ダッシュ中は受け付けない）
+        // 攻撃クールダウン
+        if (attackCooldownTimer > 0) attackCooldownTimer -= Time.deltaTime;
+
+        // 攻撃入力
         if (Input.GetButtonDown("Fire1") && !isAttacking && !isDashing && attackCooldownTimer <= 0)
         {
             StartCoroutine(Attack());
         }
 
         UpdateAnimation();
-
         HandleWalkSE();
-
     }
 
     void UpdateAnimation()
     {
-        // ★修正: 完全な接地（isGrounded）だけでなく、
-        // コヨーテタイム（coyoteTimer > 0）の猶予期間中も歩きアニメーションを許可する
         bool isMoving = moveInput != 0;
-        bool canWalk = isMoving && (isGrounded || coyoteTimer > 0);
-
-        anim.SetBool("Walk", canWalk);
+        anim.SetBool("Walk", isMoving && (isGrounded || coyoteTimer > 0));
         anim.SetBool("isGrounded", isGrounded);
         anim.SetFloat("velocityY", rb.linearVelocity.y);
         anim.SetBool("isAttacking", isAttacking);
@@ -242,67 +193,32 @@ public class Player : MonoBehaviour
 
     void FixedUpdate()
     {
-        // 操作不可のときは物理移動もしない
         if (!canControl) return;
-
         Move();
     }
 
     void Move()
     {
-        if (isDashing)
-            return;
-        
+        if (isDashing) return;
+
         float targetSpeed = moveInput * maxSpeed;
         float speedDifference = targetSpeed - rb.linearVelocity.x;
-        float accelerationRate;
+        float accelerationRate = isGrounded ? 
+            ((Mathf.Abs(targetSpeed) > 0.01f) ? groundAcceleration : groundDeceleration) : 
+            ((Mathf.Abs(targetSpeed) > 0.01f) ? airAcceleration : airDeceleration);
 
-        if (isGrounded)
-        {
-            accelerationRate = (Mathf.Abs(targetSpeed) > 0.01f) ? groundAcceleration : groundDeceleration;
-        }
-        else
-        {
-            accelerationRate = (Mathf.Abs(targetSpeed) > 0.01f) ? airAcceleration : airDeceleration;
-        }
-
-        float movement = speedDifference * accelerationRate;
-        rb.AddForce(Vector2.right * movement);
+        rb.AddForce(Vector2.right * (speedDifference * accelerationRate));
     }
 
     void HandleDashInput()
     {
-        if (isDashing || dashCooldownTimer > 0)
-            return;
+        if (isDashing || dashCooldownTimer > 0 || (!isGrounded && hasAirDashed)) return;
 
-        if (!isGrounded && hasAirDashed)
-            return;
-
-        if (Input.GetKeyDown(KeyCode.Q) ||
-            Input.GetKeyDown(KeyCode.LeftShift) ||
-            Input.GetKeyDown(KeyCode.RightShift) ||
-            Input.GetKeyDown(KeyCode.Mouse4))
+        if (Input.GetKeyDown(KeyCode.Q) || Input.GetKeyDown(KeyCode.LeftShift) || 
+            Input.GetKeyDown(KeyCode.RightShift) || Input.GetKeyDown(KeyCode.Mouse4))
         {
-            int direction;
-
-            if (moveInput > 0)
-            {
-                direction = 1;
-            }
-            else if (moveInput < 0)
-            {
-                direction = -1;
-            }
-            else
-            {
-                direction = spriteRenderer.flipX ? -1 : 1;
-            }
-
-            if (!isGrounded)
-            {
-                hasAirDashed = true;
-            }
-
+            int direction = (moveInput != 0) ? (int)Mathf.Sign(moveInput) : (spriteRenderer.flipX ? -1 : 1);
+            if (!isGrounded) hasAirDashed = true;
             StartCoroutine(Dash(direction));
         }
     }
@@ -310,7 +226,6 @@ public class Player : MonoBehaviour
     IEnumerator Dash(int direction)
     {
         isDashing = true;
-
         float originalGravity = rb.gravityScale;
         rb.gravityScale = 0;
         rb.linearVelocity = new Vector2(direction * dashSpeed, 0);
@@ -325,24 +240,15 @@ public class Player : MonoBehaviour
     IEnumerator Attack()
     {
         isAttacking = true;
-
-        Debug.Log($"AudioManager.Instance: {AudioManager.Instance}");
-        Debug.Log($"attackSE: {AudioManager.Instance?.attackSE}");
-
         AudioManager.Instance.Play(AudioManager.Instance.attackSE);
 
         float dir = spriteRenderer.flipX ? -1f : 1f;
-        attackHitbox.transform.localPosition = new Vector2(
-            hitboxOffsetX * dir,
-            attackHitbox.transform.localPosition.y
-        );
-
+        attackHitbox.transform.localPosition = new Vector2(hitboxOffsetX * dir, attackHitbox.transform.localPosition.y);
         attackHitbox.SetActive(true);
 
         yield return new WaitForSeconds(attackDuration);
 
         attackHitbox.SetActive(false);
-
         attackCooldownTimer = attackCooldown;
         isAttacking = false;
     }
@@ -381,98 +287,55 @@ public class Player : MonoBehaviour
     void OnDrawGizmosSelected()
     {
         if (groundCheck == null) return;
-
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
     }
 
     public bool IsGrounded { get { return isGrounded; } }
 
-    // ==========================================
-    // HPの増減用メソッド（外部から呼び出し可能）
-    // ==========================================
     public void TakeDamage(int damage)
     {
-        currentHp -= damage;
-        if (currentHp < 0) currentHp = 0;
+        currentHp = Mathf.Max(0, currentHp - damage);
         Debug.Log("ダメージを受けた！現在のHP: " + currentHp);
-
-        if (currentHp <= 0)
-        {
-            // ゲームオーバー処理など
-        }
+        if (currentHp <= 0) { /* ゲームオーバー処理 */ }
     }
 
     public void Heal(int amount)
     {
-        currentHp += amount;
-        if (currentHp > maxHp) currentHp = maxHp;
+        currentHp = Mathf.Min(maxHp, currentHp + amount);
         Debug.Log("回復した！現在のHP: " + currentHp);
     }
 
-    public int GetCurrentHp()
-    {
-        return currentHp;
-    }
+    public int GetCurrentHp() => currentHp;
+    public static void ResetHp() => currentHp = -1;
 
-    // ゲームを最初からやり直すときなどにHPをリセットするためのメソッド
-    public static void ResetHp()
-    {
-        currentHp = -1;
-    }
-
-    // ==========================================
-    // ゴール時：減速しながら「三分の一の位置」へ移動し、ピタッと止まるメソッド
-    // ==========================================
     public void StartGoalSlide(Vector3 goalPosition)
     {
-        canControl = false; // 操作を受け付けなくする
-        moveInput = 0;      // 移動入力をリセット
-
-        if (anim != null)
-        {
-            anim.SetBool("Walk", false);
-        }
-
+        canControl = false;
+        moveInput = 0;
+        if (anim != null) anim.SetBool("Walk", false);
         StartCoroutine(GoalSlideRoutine(goalPosition));
     }
 
     private IEnumerator GoalSlideRoutine(Vector3 goalPosition)
     {
         float startX = transform.position.x;
-
-        // ゴール中心から手前側へずらした「三分の一の位置」を計算
-        float targetX;
-        float offset = 0.5f; // 停止位置の調整用オフセット
-
-        if (startX < goalPosition.x)
-        {
-            targetX = goalPosition.x - offset; // 左から入った場合
-        }
-        else
-        {
-            targetX = goalPosition.x + offset; // 右から入った場合
-        }
-
-        float slideSpeed = 10f; // 移動するスピード
+        float offset = 0.5f;
+        float targetX = (startX < goalPosition.x) ? (goalPosition.x - offset) : (goalPosition.x + offset);
+        float slideSpeed = 10f;
 
         while (true)
         {
-            // 一定の速度で目標地点（targetX）へ向かって移動
             float currentX = Mathf.MoveTowards(transform.position.x, targetX, slideSpeed * Time.deltaTime);
-
-            // 接地判定をチェック
             bool currentlyGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
 
-            // 「三分の一の位置に到着した」または「地面に着地した」瞬間にピタッと止まる
             if (currentlyGrounded || Mathf.Abs(currentX - targetX) < 0.01f)
             {
                 transform.position = new Vector3(targetX, transform.position.y, transform.position.z);
-                rb.linearVelocity = new Vector2(0f, 0f);
+                rb.linearVelocity = Vector2.zero;
                 break;
             }
 
-            // X座標を更新しつつ、重力（Y軸の落下）はそのまま活かす
             transform.position = new Vector3(currentX, transform.position.y, transform.position.z);
             rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
 
@@ -496,5 +359,4 @@ public class Player : MonoBehaviour
             walkSETimer = 0;
         }
     }
-
 }

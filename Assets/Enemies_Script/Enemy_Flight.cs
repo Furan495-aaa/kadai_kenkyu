@@ -1,193 +1,134 @@
 using UnityEngine;
-using UnityEngine.Android;
 
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(Collider2D))]
+[RequireComponent(typeof(SpriteRenderer))] // 画面外自動停止に必要
 public class Enemy_Flight : MonoBehaviour
 {
-    [Header("移動速度")]
-    [SerializeField] private float moveSpeed = 8.0f;
-    [SerializeField] private float upSpeed = 8.0f;
-    [SerializeField] private float downSpeed = 8.0f;
+    [Header("移動速度")]
+    [SerializeField] private float moveSpeed = 8.0f;
+    [SerializeField] private float upSpeed = 8.0f;
+    [SerializeField] private float downSpeed = 8.0f;
 
-    private Rigidbody2D rb;
+    private Rigidbody2D rb;
 
-    [Header("プレイヤーとの距離")]
-    [SerializeField] private float YHDist = 10;
-    [SerializeField] private float YLDist = 10;
+    [Header("プレイヤーとの距離")]
+    [SerializeField] private float YHDist = 10;
+    [SerializeField] private float YLDist = 10;
 
-    [Header("検知の設定")]
-    [SerializeField] private LayerMask groundLayer;      // 地面や壁と判定するレイヤー
-    [SerializeField] private float groundCheckDistance = 0.8f; // 足元の検知距離
-    [SerializeField] private float wallCheckDistance = 0.4f;   // 前方の壁の検知距離
+    [Header("検知の設定")]
+    [SerializeField] private LayerMask groundLayer;          // 壁と判定するレイヤー
+    [SerializeField] private float wallCheckDistance = 0.4f;   // 前方の壁の検知距離
 
-    [Header("索敵の設定")]
-    [SerializeField] private float searchRadius = 5.0f; // プレイヤーを見つける円の半径
-    [SerializeField] private string targetTag = "Player"; // 検索する対象のタグ名
-    private Transform detectedPlayer;                   // 見つけたプレイヤーのトランスフォーム
+    [Header("索敵の設定")]
+    [SerializeField] private float searchRadius = 5.0f;     // プレイヤーを見つける円の半径
+    [SerializeField] private string targetTag = "Player";     // 検索する対象のタグ名
+    [SerializeField] private float turnThreshold = 0.15f;     // 真上・真下でのバタつきを防ぐしきい値
 
-    // プレイヤーを一度検知したかを保持するフラグ
-    private bool isChasing = false;
+    private Transform detectedPlayer;                       // 見つけたプレイヤー
+    private bool isChasing = false;
+    private bool isFacingRight = true;
+    private Collider2D enemyCollider;
+    private bool isVisibleOnScreen = false;
 
-    // 向きを管理するフラグ（true: 右向き, false: 左向き）
-    private bool isFacingRight = true;
+    void Start()
+    {
+        rb = GetComponent<Rigidbody2D>();
+        enemyCollider = GetComponent<Collider2D>();
+        isFacingRight = transform.localScale.x >= 0;
+    }
 
-    // 当たり判定（Collider2D）
-    private Collider2D enemyCollider;
+    // ─── 画面外自動停止 ───
+    void OnBecameVisible() { isVisibleOnScreen = true; }
+    void OnBecameInvisible() 
+    { 
+        isVisibleOnScreen = false; 
+        if (rb != null) { rb.linearVelocityX = 0; rb.linearVelocityY = 0; }
+    }
 
-    void Start()
-    {
-        rb = GetComponent<Rigidbody2D>();
-        enemyCollider = GetComponent<Collider2D>();
-        
-        // 初期スケールから向きを推測
-        if (transform.localScale.x < 0)
-        {
-            isFacingRight = false;
-        }
-        else
-        {
-            isFacingRight = true;
-        }
-    }
+    void Update()
+    {
+        if (!isVisibleOnScreen || enemyCollider == null) return;
 
-    void Update()
-    {
-        if (enemyCollider == null) return;
+        Vector2 center = enemyCollider.bounds.center;
 
-        Vector2 center = enemyCollider.bounds.center;
+        // 1. プレイヤーの索敵（最初に見つかった対象を取得して軽量化）
+        detectedPlayer = null;
+        Collider2D[] hitColliders = Physics2D.OverlapCircleAll(center, searchRadius);
+        foreach (var col in hitColliders)
+        {
+            if (col.CompareTag(targetTag))
+            {
+                detectedPlayer = col.transform;
+                break;
+            }
+        }
+        isChasing = (detectedPlayer != null);
 
-        // 1. 周囲にあるすべてのColliderを検知して、その中からプレイヤーが索敵範囲内にいるか調べる
-        bool isPlayerInRadius = false;
-        Collider2D[] hitColliders = Physics2D.OverlapCircleAll(center, searchRadius);
-        foreach (var col in hitColliders)
-        {
-            if (col.CompareTag(targetTag))
-            {
-                detectedPlayer = col.transform;
-                isPlayerInRadius = true;
-                break;
-            }
-        }
+        // 2. 進行方向のレイキャスト判定（壁チェック）
+        float halfWidth = enemyCollider.bounds.extents.x;
+        Vector2 wallCheckPos = new Vector2(center.x + (halfWidth + 0.1f) * (isFacingRight ? 1 : -1), center.y);
+        bool isWallAhead = Physics2D.Raycast(wallCheckPos, isFacingRight ? Vector2.right : Vector2.left, wallCheckDistance, groundLayer);
 
-        // 2. 追跡状態の切り替え（範囲内なら追う、範囲外に出たら追跡をやめる）
-        if (isPlayerInRadius)
-        {
-            isChasing = true; // 範囲内にいるので追跡モードをON
-        }
-        else
-        {
-            isChasing = false; // 範囲外に出たので追跡モードを解除（通常の巡回へ）
-            detectedPlayer = null;
+        // 3. 【最優先】壁がある場合は強制反転
+        if (isWallAhead)
+        {
+            Flip();
+        }
+        // 4. 追跡中：プレイヤーの方向を向く ＆ 上下移動（真上でのバタつき防止対応）
+        else if (isChasing)
+        {
+            float xDiff = detectedPlayer.position.x - transform.position.x;
 
-            rb.linearVelocityY = 0;
-        }
+            // X座標の差が「turnThreshold」以上離れているときだけ向きを変える
+            if (xDiff > turnThreshold && !isFacingRight)
+            {
+                Flip();
+            }
+            else if (xDiff < -turnThreshold && isFacingRight)
+            {
+                Flip();
+            }
 
-        // 3. 進行方向の決定
-        Vector2 checkDirection = isFacingRight ? Vector2.right : Vector2.left;
+            // 上下移動の制御
+            if (detectedPlayer.position.y + YHDist > transform.position.y)
+            {
+                rb.linearVelocityY = upSpeed;
+            }
+            else if (detectedPlayer.position.y + YLDist < transform.position.y)
+            {
+                rb.linearVelocityY = -downSpeed;
+            }
+            else
+            {
+                rb.linearVelocityY = 0;
+            }
+        }
+        else
+        {
+            rb.linearVelocityY = 0;
+        }
+    }
 
-        // 4. 自身のコライダーに当たらないよう、少し外側からレイを飛ばす計算
-        float halfWidth = enemyCollider.bounds.extents.x;
-        float halfHeight = enemyCollider.bounds.extents.y;
+    void FixedUpdate()
+    {
+        if (!isVisibleOnScreen) return;
+        rb.linearVelocityX = isFacingRight ? moveSpeed : -moveSpeed;
+    }
 
-        Vector2 wallCheckPos = new Vector2(center.x + (halfWidth + 0.1f) * (isFacingRight ? 1 : -1), center.y);
-        
-        // ★修正: 足元チェックの位置を体の中心（center.x）に固定し、反転時の誤判定を防ぐ
-        Vector2 groundCheckPos = new Vector2(center.x, center.y - halfHeight + 0.1f);
+    private void Flip()
+    {
+        isFacingRight = !isFacingRight;
+        Vector3 localScale = transform.localScale;
+        localScale.x *= -1;
+        transform.localScale = localScale;
+    }
 
-        bool isWallAhead = Physics2D.Raycast(wallCheckPos, checkDirection, wallCheckDistance, groundLayer);
-        bool isGroundAhead = Physics2D.Raycast(groundCheckPos, Vector2.down, groundCheckDistance, groundLayer);
-
-        // 5. 【最優先】壁がある場合：追跡中であっても強制的に反転する
-        if (isWallAhead)
-        {
-            Flip();
-        }
-        // 6. 追跡中（isChasingがtrue）の場合：プレイヤーの方向を向く
-        else if (isChasing && detectedPlayer != null)
-        {
-            if (detectedPlayer.position.x > transform.position.x && !isFacingRight)
-            {
-                Flip();
-            }
-            else if (detectedPlayer.position.x < transform.position.x && isFacingRight)
-            {
-                Flip();
-            }
-
-            if (detectedPlayer.position.y + YHDist > transform.position.y)
-            {
-                Up();
-            }
-            else if (detectedPlayer.position.y + YLDist < transform.position.y)
-            {
-                Down();
-            }
-            else
-            {
-                rb.linearVelocityY = 0;
-            }
-        }
-    }
-
-    void FixedUpdate()
-    {
-        Walk();
-    }
-
-    private void Walk()
-    {
-        if (isFacingRight)
-        {
-            rb.linearVelocityX = moveSpeed;
-        }
-        else
-        {
-            rb.linearVelocityX = -moveSpeed;
-        }
-    }
-
-    private void Up()
-    {
-        rb.linearVelocityY = upSpeed;
-    }
-
-    private void Down()
-    {
-        rb.linearVelocityY = -downSpeed;
-    }
-
-    private void Flip()
-    {
-        isFacingRight = !isFacingRight;
-
-        Vector3 localScale = transform.localScale;
-        localScale.x *= -1;
-        transform.localScale = localScale;
-    }
-
-    // UnityエディタのSceneビューで確認用のギズモを描画
-    private void OnDrawGizmosSelected()
-    {
-        Collider2D col = GetComponent<Collider2D>();
-        if (col == null) return;
-
-        Vector2 center = col.bounds.center;
-        float halfWidth = col.bounds.extents.x;
-        float halfHeight = col.bounds.extents.y;
-
-        Vector2 wallCheckPos = new Vector2(center.x + halfWidth + 0.1f, center.y);
-        
-        // ★ギズモの足元位置も中心に合わせる
-        Vector2 groundCheckPos = new Vector2(center.x, center.y - halfHeight + 0.1f);
-
-        Gizmos.color = Color.green;
-        Gizmos.DrawLine(wallCheckPos, wallCheckPos + Vector2.right * wallCheckDistance);
-
-        Gizmos.color = Color.blue;
-        Gizmos.DrawLine(groundCheckPos, groundCheckPos + Vector2.down * groundCheckDistance);
-
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(center, searchRadius);
-    }
+    private void OnDrawGizmosSelected()
+    {
+        Collider2D col = GetComponent<Collider2D>();
+        if (col == null) return;
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(col.bounds.center, searchRadius);
+    }
 }
