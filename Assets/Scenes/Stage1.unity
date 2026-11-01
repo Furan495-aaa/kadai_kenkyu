@@ -62097,13 +62097,7 @@ MonoBehaviour:
   dashSpeed: 20
   dashDuration: 0.15
   dashCooldown: 0.5
-  doubleTapTime: 0.3
   jumpForce: 14
-  attackHitbox: {fileID: 277820813}
-  attackDuration: 0.2
-  attackCooldown: 0.1
-  attackDamage: 100
-  hitboxOffsetX: 0.8
   maxJumpCount: 2
   jumpCutMultiplier: 0.5
   normalGravity: 3
@@ -62117,6 +62111,11 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 8
+  attackHitbox: {fileID: 277820813}
+  attackDuration: 0.2
+  attackCooldown: 0.1
+  attackDamage: 100
+  hitboxOffsetX: 0.8
   walkSEInterval: 0.4
 --- !u!50 &1693062990
 Rigidbody2D:
@@ -62587,6 +62586,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: GameOverUI
       objectReference: {fileID: 0}
+    - target: {fileID: 2831451115203233571, guid: 617ec96abc5e1d147a26ac2565dcd537, type: 3}
+      propertyPath: m_VertexColorAlwaysGammaSpace
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3795671233185975066, guid: 617ec96abc5e1d147a26ac2565dcd537, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
@@ -62673,6 +62676,14 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5094380669574178615, guid: 617ec96abc5e1d147a26ac2565dcd537, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9198822564746493862, guid: 617ec96abc5e1d147a26ac2565dcd537, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9198822564746493862, guid: 617ec96abc5e1d147a26ac2565dcd537, type: 3}
+      propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []

@@ -293202,7 +293202,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f68371de7e61c824ea738a3591abc0fc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameOverManager
-  gameOverUI: {fileID: 177303573}
+  gameOverContent: {fileID: 0}
 --- !u!4 &1185146022 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7412785007836970979, guid: becbe24017ada55489a62bc7c19341c9, type: 3}
@@ -294313,13 +294313,7 @@ MonoBehaviour:
   dashSpeed: 20
   dashDuration: 0.15
   dashCooldown: 0.5
-  doubleTapTime: 0.3
   jumpForce: 14
-  attackHitbox: {fileID: 1789595017}
-  attackDuration: 0.2
-  attackCooldown: 0.4
-  attackDamage: 100
-  hitboxOffsetX: 0.8
   maxJumpCount: 2
   jumpCutMultiplier: 0.5
   normalGravity: 3
@@ -294333,6 +294327,11 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 8
+  attackHitbox: {fileID: 1789595017}
+  attackDuration: 0.2
+  attackCooldown: 0.4
+  attackDamage: 100
+  hitboxOffsetX: 0.8
   walkSEInterval: 0.4
 --- !u!50 &1693062990
 Rigidbody2D:
@@ -295411,6 +295410,18 @@ PrefabInstance:
       propertyPath: m_Name
       value: HPbersystem
       objectReference: {fileID: 0}
+    - target: {fileID: 5371353239311879391, guid: 689140a027721954f912cf661d458868, type: 3}
+      propertyPath: m_Color.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5371353239311879391, guid: 689140a027721954f912cf661d458868, type: 3}
+      propertyPath: m_Color.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5371353239311879391, guid: 689140a027721954f912cf661d458868, type: 3}
+      propertyPath: m_Color.r
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6531670009385038404, guid: 689140a027721954f912cf661d458868, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -295490,6 +295501,18 @@ PrefabInstance:
     - target: {fileID: 6531670009385038404, guid: 689140a027721954f912cf661d458868, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6781548557369449070, guid: 689140a027721954f912cf661d458868, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 25
+      objectReference: {fileID: 0}
+    - target: {fileID: 8483678874769365925, guid: 689140a027721954f912cf661d458868, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -240
+      objectReference: {fileID: 0}
+    - target: {fileID: 9028287893710639166, guid: 689140a027721954f912cf661d458868, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 30
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
