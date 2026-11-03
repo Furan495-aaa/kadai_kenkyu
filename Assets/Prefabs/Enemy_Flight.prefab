@@ -9,10 +9,11 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5727261846275718958}
+  - component: {fileID: 7176444028533239577}
+  - component: {fileID: -5055358742552369749}
   - component: {fileID: 5650679629967041896}
   - component: {fileID: 5099311125448975242}
   - component: {fileID: 1193636491160834703}
-  - component: {fileID: 7176444028533239577}
   - component: {fileID: -3875843406999063942}
   m_Layer: 0
   m_Name: Enemy_Flight
@@ -36,6 +37,48 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7176444028533239577
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2503121077981738311}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb2d04e93e22a9148b25f759797536f3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Enemy_Flight
+  moveSpeed: 2
+  upSpeed: 2
+  downSpeed: 2
+  YHDist: 3
+  YLDist: 0
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  wallCheckDistance: 0.4
+  searchRadius: 5
+  targetTag: Player
+  turnThreshold: 0.15
+--- !u!114 &-5055358742552369749
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2503121077981738311}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 32d2fbebf30ada2418a10595c5fbc188, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Enemy_Attack_B8
+  target: {fileID: 0}
+  enemiesBullet: {fileID: 6692266960357395196, guid: 5d7f5f1082926014da00a9f4d629f0c0, type: 3}
+  bulletSpeedX: 7
+  adjustPosX: 0
+  adjustPosY: 0
+  intervalTime: 3
 --- !u!212 &5650679629967041896
 SpriteRenderer:
   serializedVersion: 2
@@ -168,30 +211,6 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
---- !u!114 &7176444028533239577
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2503121077981738311}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eb2d04e93e22a9148b25f759797536f3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Enemy_Flight
-  moveSpeed: 2
-  upSpeed: 2
-  downSpeed: 2
-  YHDist: 3
-  YLDist: 0
-  groundLayer:
-    serializedVersion: 2
-    m_Bits: 0
-  wallCheckDistance: 0.4
-  searchRadius: 5
-  targetTag: Player
-  turnThreshold: 0.15
 --- !u!114 &-3875843406999063942
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -15,7 +15,7 @@ public class Enemy_Attack_B : MonoBehaviour
     [SerializeField] float bulletSpeedX = 8f;
     //[SerializeField] float bulletSpeedY = 8f;
 
-    [UnitHeaderInspectable("発射位置補正値")]
+    [Header("発射位置補正値")]
     [SerializeField] float adjustPosX = 1f;
     [SerializeField] float adjustPosY = 1f;
 
