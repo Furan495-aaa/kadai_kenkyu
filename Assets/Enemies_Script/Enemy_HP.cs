@@ -6,6 +6,10 @@ public class Enemy : MonoBehaviour
     public int maxHp = 3;
 
     private int currentHp;
+
+    [Header("衝突時ダメージ")]
+    public int damage = 10;
+
     void Start()
     {
         currentHp = maxHp;
@@ -29,5 +33,22 @@ public class Enemy : MonoBehaviour
         // 死亡エフェクトなど追加できる
         Debug.Log($"{gameObject.name} が倒された！");
         Destroy(gameObject);
+    }
+    
+    private void OnCollisionStay2D(Collision2D other)
+    {
+        if (!other.gameObject.CompareTag("Player"))
+            return;
+
+        PlayerDamage player =
+            other.gameObject.GetComponent<PlayerDamage>();
+
+        if (player != null)
+        {
+            player.TakeDamage(
+                damage,
+                transform.position
+            );
+        }
     }
 }

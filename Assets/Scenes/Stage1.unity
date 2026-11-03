@@ -61785,6 +61785,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Enemy
   maxHp: 100
+  damage: 10
 --- !u!114 &970576108 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 3493091349142624920, guid: 689140a027721954f912cf661d458868, type: 3}

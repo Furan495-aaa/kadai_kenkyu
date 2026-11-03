@@ -3,8 +3,8 @@ using System.Collections;
 
 public class Enemy_Bullet : MonoBehaviour
 {
-    [Header("攻撃力")]
-    [SerializeField] private int attack = 1;
+    //[Header("攻撃力")]
+    //[SerializeField] private int attack = 1;
 
     [Header("持続時間")]
     [SerializeField] private int timeToDestroy = 5;

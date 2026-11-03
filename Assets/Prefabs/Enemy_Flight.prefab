@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 5099311125448975242}
   - component: {fileID: 1193636491160834703}
   - component: {fileID: 7176444028533239577}
+  - component: {fileID: -3875843406999063942}
   m_Layer: 0
   m_Name: Enemy_Flight
   m_TagString: Enemy
@@ -187,7 +188,21 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 0
-  groundCheckDistance: 0.8
   wallCheckDistance: 0.4
   searchRadius: 5
   targetTag: Player
+  turnThreshold: 0.15
+--- !u!114 &-3875843406999063942
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2503121077981738311}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df135edc14057d848aa0276461c39219, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Enemy
+  maxHp: 100
+  damage: 10
