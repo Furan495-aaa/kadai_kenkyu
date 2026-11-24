@@ -67,5 +67,5 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "r8kadaikenkyu.slnx"
+    "dotnet.defaultSolution": "kadaikenkyunoyatsu.slnx"
 }
