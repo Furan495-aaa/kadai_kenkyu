@@ -1,0 +1,83 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &3344275573794923536
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1511198535585674753}
+  - component: {fileID: 6820384627447926542}
+  - component: {fileID: 1469040378138113091}
+  m_Layer: 0
+  m_Name: TitleManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1511198535585674753
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3344275573794923536}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 480.72525, y: 329.21164, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6820384627447926542
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3344275573794923536}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7bc38b19eb81eed4aa8771a4e8d60c59, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TitleManager
+  firstStageSceneName: Scene1
+  playerMoveScript: {fileID: 0}
+  pressAnyKeyText: {fileID: 0}
+  menuButtonsGroup: {fileID: 0}
+  startButton: {fileID: 0}
+  seAudioSource: {fileID: 0}
+  pressAnyKeySE:
+    clip: {fileID: 8300000, guid: efb0f26032196ca4a8ab230c2cc1a16f, type: 3}
+    volumeScale: 0.787
+    timingOffsetSeconds: 0
+  submitSE:
+    clip: {fileID: 8300000, guid: 9db3f751934d3ad4da1c14794b9c2549, type: 3}
+    volumeScale: 1
+    timingOffsetSeconds: 0
+  cancelSE:
+    clip: {fileID: 8300000, guid: 846019f7f4eacaa41823b8b459ca2ac5, type: 3}
+    volumeScale: 1.287
+    timingOffsetSeconds: 0
+  idleFadeSpeed: 2
+  pressAnyKeyFlashInterval: 0.06
+--- !u!114 &1469040378138113091
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3344275573794923536}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3cccbfb0f05ba04e935a9496cb88dd8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DelayedOneShotSE
+  audioSource: {fileID: 0}
+  clip: {fileID: 0}
+  volumeScale: 1
+  delaySeconds: 0

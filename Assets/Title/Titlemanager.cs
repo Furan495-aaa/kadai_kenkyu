@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -7,8 +8,17 @@ using TMPro;
 
 public class TitleManager : MonoBehaviour
 {
+    [Serializable]
+    private struct SeSetting
+    {
+        public AudioClip clip;
+        [Range(0f, 1.5f)] public float volumeScale;
+        // マイナス値: 先行再生の秒数 / 0: 同時 / プラス値: 遅延秒数
+        [Range(-2f, 2f)] public float timingOffsetSeconds;
+    }
+
     [Header("シーン・移動設定")]
-    [SerializeField] private string firstStageSceneName = "Screen1";
+    [SerializeField] private string firstStageSceneName = "Stage1";
     [SerializeField] private MonoBehaviour playerMoveScript;
 
     [Header("UIパーツ")]
@@ -16,9 +26,15 @@ public class TitleManager : MonoBehaviour
     [SerializeField] private GameObject menuButtonsGroup;
     [SerializeField] private Button startButton;
 
+    [Header("サウンド設定（SEごとに個別調整）")]
+    [SerializeField] private AudioSource seAudioSource;
+    [SerializeField] private SeSetting pressAnyKeySE = new SeSetting { volumeScale = 1f, timingOffsetSeconds = 0f };
+    [SerializeField] private SeSetting submitSE = new SeSetting { volumeScale = 1f, timingOffsetSeconds = 0f };
+    [SerializeField] private SeSetting cancelSE = new SeSetting { volumeScale = 1f, timingOffsetSeconds = 0f };
+
     [Header("点滅演出の速度設定")]
-    [SerializeField] private float idleFadeSpeed = 2.0f; // 待機中および選択中ボタンの点滅の速さ
-    [SerializeField] private float pressAnyKeyFlashInterval = 0.06f; // PRESS ANY BUTTONのキー押下後点滅の間隔
+    [SerializeField] private float idleFadeSpeed = 2.0f;
+    [SerializeField] private float pressAnyKeyFlashInterval = 0.06f;
 
     private TMP_Text pressAnyKeyTMP;
     private TMP_Text[] menuButtonTexts;
@@ -31,6 +47,11 @@ public class TitleManager : MonoBehaviour
     void Start()
     {
         Time.timeScale = 1f;
+
+        if (seAudioSource == null)
+        {
+            seAudioSource = GetComponent<AudioSource>();
+        }
 
         if (pressAnyKeyText != null)
         {
@@ -52,7 +73,6 @@ public class TitleManager : MonoBehaviour
 
     void Update()
     {
-        // 1. PRESS ANY BUTTON 待機中
         if (!isMenuOpened)
         {
             if (!isTransitioning)
@@ -61,25 +81,32 @@ public class TitleManager : MonoBehaviour
 
                 if (Input.anyKeyDown)
                 {
-                    StartCoroutine(PressedBlinkAndOpenMenu());
+                    if (gameObject.activeInHierarchy)
+                    {
+                        StartCoroutine(PressedBlinkAndOpenMenuRoutine());
+                    }
+                    else
+                    {
+                        PlaySeImmediate(pressAnyKeySE);
+                        OpenMainMenu();
+                    }
                 }
             }
             return;
         }
 
-        // 2. バックスペースでタイトル待機に戻る
+        if (isTransitioning) return;
+
+        // Backspaceキーでキャンセルしてタイトル待機に戻る
         if (Input.GetKeyDown(KeyCode.Backspace))
         {
+            TriggerSe(cancelSE);
             ReturnToTitleWait();
             return;
         }
 
-        if (isTransitioning) return;
-
-        // 3. メニュー選択中の点滅処理
         UpdateSelectedButtonBlink();
 
-        // フォーカス自動復旧
         if (EventSystem.current != null && EventSystem.current.currentSelectedGameObject == null)
         {
             if (Input.GetAxisRaw("Vertical") != 0 || Input.GetAxisRaw("Horizontal") != 0)
@@ -90,6 +117,31 @@ public class TitleManager : MonoBehaviour
                 }
             }
         }
+    }
+
+    private void PlaySeImmediate(SeSetting setting)
+    {
+        if (seAudioSource == null || setting.clip == null) return;
+        if (!seAudioSource.enabled || !seAudioSource.gameObject.activeInHierarchy) return;
+        seAudioSource.PlayOneShot(setting.clip, setting.volumeScale);
+    }
+
+    private void TriggerSe(SeSetting setting)
+    {
+        if (setting.timingOffsetSeconds > 0f && gameObject.activeInHierarchy)
+        {
+            StartCoroutine(PlaySeAfterDelayRoutine(setting, setting.timingOffsetSeconds));
+        }
+        else
+        {
+            PlaySeImmediate(setting);
+        }
+    }
+
+    private IEnumerator PlaySeAfterDelayRoutine(SeSetting setting, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        PlaySeImmediate(setting);
     }
 
     private void FadeBlinkText(TMP_Text tmp, float time)
@@ -129,7 +181,7 @@ public class TitleManager : MonoBehaviour
             }
             else
             {
-                c.a = 1.0f; 
+                c.a = 1.0f;
             }
             tmp.color = c;
         }
@@ -145,11 +197,26 @@ public class TitleManager : MonoBehaviour
         if (pressAnyKeyText != null) pressAnyKeyText.SetActive(true);
     }
 
-    private IEnumerator PressedBlinkAndOpenMenu()
+    private IEnumerator PressedBlinkAndOpenMenuRoutine()
     {
         isTransitioning = true;
 
-        // PRESS ANY BUTTONを押したときの5回点滅だけは維持（必要に応じてここも消せます）
+        float offset = pressAnyKeySE.timingOffsetSeconds;
+
+        if (offset < 0f)
+        {
+            PlaySeImmediate(pressAnyKeySE);
+            yield return new WaitForSeconds(-offset);
+        }
+        else if (offset > 0f)
+        {
+            StartCoroutine(PlaySeAfterDelayRoutine(pressAnyKeySE, offset));
+        }
+        else
+        {
+            PlaySeImmediate(pressAnyKeySE);
+        }
+
         if (pressAnyKeyTMP != null)
         {
             Color c = pressAnyKeyTMP.color;
@@ -168,24 +235,33 @@ public class TitleManager : MonoBehaviour
         OpenMainMenu();
     }
 
-    // ==========================================
-    // 決定・クリック時は即座に処理を実行
-    // ==========================================
-
     public void OnClickStartButton()
     {
-        if (isTransitioning) return;
+        GoToScreen1();
+    }
 
-        if (playerMoveScript != null) playerMoveScript.enabled = true;
-        if (!string.IsNullOrEmpty(firstStageSceneName))
+    public void GoToScreen1()
+    {
+        if (isTransitioning) return;
+        isTransitioning = true;
+
+        PlaySeImmediate(submitSE);
+
+        if (playerMoveScript != null)
         {
-            SceneManager.LoadScene(firstStageSceneName);
+            playerMoveScript.enabled = true;
         }
+
+        string targetScene = string.IsNullOrEmpty(firstStageSceneName) ? "Stage1" : firstStageSceneName;
+        SceneManager.LoadScene(targetScene);
     }
 
     public void OnClickQuitButton()
     {
         if (isTransitioning) return;
+        isTransitioning = true;
+
+        PlaySeImmediate(submitSE);
 
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
@@ -196,7 +272,6 @@ public class TitleManager : MonoBehaviour
 
     private void OpenMainMenu()
     {
-        isMenuOpened = false; 
         isMenuOpened = true;
         isTransitioning = false;
 
